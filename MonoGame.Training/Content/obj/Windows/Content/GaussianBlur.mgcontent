@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PipelineBuildEvent xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <SourceFile>C:/Users/Admin/Documents/Projects/MonoGame.Training/MonoGame.Training/Content/GaussianBlur.fx</SourceFile>
+  <SourceTime>2023-12-24T18:19:08.1560219+00:00</SourceTime>
+  <DestFile>C:/Users/Admin/Documents/Projects/MonoGame.Training/MonoGame.Training/Content/bin/Windows/Content/GaussianBlur.xnb</DestFile>
+  <DestTime>2023-12-24T18:19:20.4105532+00:00</DestTime>
+  <Importer>EffectImporter</Importer>
+  <ImporterTime>2020-08-10T16:17:54+01:00</ImporterTime>
+  <Processor>EffectProcessor</Processor>
+  <ProcessorTime>2020-08-10T16:17:54+01:00</ProcessorTime>
+  <Parameters>
+    <Key>DebugMode</Key>
+    <Value>Auto</Value>
+  </Parameters>
+  <Dependencies />
+  <BuildAsset />
+  <BuildOutput />
+</PipelineBuildEvent>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SourceFileCollection xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Profile>Reach</Profile>
+  <Platform>Windows</Platform>
+  <Config />
+  <SourceFiles>
+    <File>C:/Users/Admin/Documents/Projects/MonoGame.Training/MonoGame.Training/Content/Alpha.fx</File>
+    <File>C:/Users/Admin/Documents/Projects/MonoGame.Training/MonoGame.Training/Content/Arial.spritefont</File>
+    <File>C:/Users/Admin/Documents/Projects/MonoGame.Training/MonoGame.Training/Content/ChaoGarden.png</File>
+    <File>C:/Users/Admin/Documents/Projects/MonoGame.Training/MonoGame.Training/Content/ChaoSprites.png</File>
+    <File>C:/Users/Admin/Documents/Projects/MonoGame.Training/MonoGame.Training/Content/GrayScale.fx</File>
+    <File>C:/Users/Admin/Documents/Projects/MonoGame.Training/MonoGame.Training/Content/Pong/Ball.png</File>
+    <File>C:/Users/Admin/Documents/Projects/MonoGame.Training/MonoGame.Training/Content/Pong/Net.png</File>
+    <File>C:/Users/Admin/Documents/Projects/MonoGame.Training/MonoGame.Training/Content/Pong/Paddle.png</File>
+    <File>C:/Users/Admin/Documents/Projects/MonoGame.Training/MonoGame.Training/Content/Pong/Score_0.png</File>
+    <File>C:/Users/Admin/Documents/Projects/MonoGame.Training/MonoGame.Training/Content/Pong/Score_1.png</File>
+    <File>C:/Users/Admin/Documents/Projects/MonoGame.Training/MonoGame.Training/Content/Pong/Score_2.png</File>
+    <File>C:/Users/Admin/Documents/Projects/MonoGame.Training/MonoGame.Training/Content/Pong/Score_3.png</File>
+    <File>C:/Users/Admin/Documents/Projects/MonoGame.Training/MonoGame.Training/Content/Pong/Score_4.png</File>
+    <File>C:/Users/Admin/Documents/Projects/MonoGame.Training/MonoGame.Training/Content/Pong/Score_5.png</File>
+    <File>C:/Users/Admin/Documents/Projects/MonoGame.Training/MonoGame.Training/Content/Pong/Score_6.png</File>
+    <File>C:/Users/Admin/Documents/Projects/MonoGame.Training/MonoGame.Training/Content/Pong/Score_7.png</File>
+    <File>C:/Users/Admin/Documents/Projects/MonoGame.Training/MonoGame.Training/Content/Pong/Score_8.png</File>
+    <File>C:/Users/Admin/Documents/Projects/MonoGame.Training/MonoGame.Training/Content/Pong/Score_9.png</File>
+  </SourceFiles>
+  <DestFiles>
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+  </DestFiles>
+</SourceFileCollection>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PipelineBuildEvent xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <SourceFile>C:/Users/Admin/Documents/Projects/MonoGame.Training/MonoGame.Training/Content/GrayScale.fx</SourceFile>
+  <SourceTime>2023-12-24T08:36:57.590773+00:00</SourceTime>
+  <DestFile>C:/Users/Admin/Documents/Projects/MonoGame.Training/MonoGame.Training/Content/bin/Windows/GrayScale.xnb</DestFile>
+  <DestTime>2023-12-29T03:48:34.9330217+00:00</DestTime>
+  <Importer>EffectImporter</Importer>
+  <ImporterTime>2020-08-10T16:17:54+01:00</ImporterTime>
+  <Processor>EffectProcessor</Processor>
+  <ProcessorTime>2020-08-10T16:17:54+01:00</ProcessorTime>
+  <Parameters>
+    <Key>DebugMode</Key>
+    <Value>Auto</Value>
+  </Parameters>
+  <Dependencies />
+  <BuildAsset />
+  <BuildOutput />
+</PipelineBuildEvent>
