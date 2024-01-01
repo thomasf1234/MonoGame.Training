@@ -36,7 +36,7 @@ namespace MonoGame.Training
 
         private Dictionary<string, Scene> _scenesByName;
         private Scene _activeScene;
-        private Stopwatch _loadingStopwatch; 
+        private Stopwatch _loadingStopwatch;
 
         public Game1()
         {
@@ -59,7 +59,7 @@ namespace MonoGame.Training
             this.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0f / targetFPS);*/
 
             _graphics.SynchronizeWithVerticalRetrace = true; //Vsync
-            this.IsFixedTimeStep = true; // default;
+            this.IsFixedTimeStep = false; // true; // default;
             int targetFPS = 60;
             this.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0f / targetFPS);
 

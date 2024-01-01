@@ -7,7 +7,7 @@ using MonoGame.Training.Entities;
 using System;
 using MonoGame.Training.Systems;
 using System.Collections.Generic;
-using SharpDX.MediaFoundation;
+using MonoGame.Training.Models;
 
 // https://badecho.com/index.php/2023/08/02/alpha-spritebatch/
 namespace MonoGame.Training.Scenes
@@ -20,7 +20,7 @@ namespace MonoGame.Training.Scenes
 
         private RenderSystem _renderSystem;
         private InputSystem _inputSystem;
-        private MotionSystem _motionSystem;
+        private PhysicsSystem _physicsSystem;
         private CollisionSystem _collisionSystem;
         private GraphicsHelper _graphicsHelper;
 
@@ -50,7 +50,7 @@ namespace MonoGame.Training.Scenes
             #region Initialise Systems
             _renderSystem = new RenderSystem(_componentRepository);
             _inputSystem = new InputSystem(_componentRepository, _inputHelper, _graphicsHelper);
-            _motionSystem = new MotionSystem(_componentRepository);
+            _physicsSystem = new PhysicsSystem(_componentRepository);
             _collisionSystem = new CollisionSystem(_componentRepository);
             #endregion
 
@@ -112,9 +112,18 @@ namespace MonoGame.Training.Scenes
             {
                 Id = Guid.NewGuid()
             };
+            var p1PaddleRigidBodyComponent = new RigidBodyComponent()
+            {
+                Mass = float.PositiveInfinity
+            };
             var p1PaddleTransformComponent = new TransformComponent()
             {
                 Position = new Vector2(52 * _scale, 0)
+            };
+            var p1PaddleMotionComponent = new MotionComponent()
+            {
+                Velocity = Vector2.Zero,
+                Acceleration = Vector2.Zero
             };
             var p1PaddleMeshComponent = new MeshComponent()
             {
@@ -122,6 +131,7 @@ namespace MonoGame.Training.Scenes
                 {
                     new Vector2(4, 0),
                     new Vector2(4, 14)
+
                 },
                 Edges = new List<Tuple<int, int>>()
                 {
@@ -140,13 +150,28 @@ namespace MonoGame.Training.Scenes
                 }
             };
 
+            _componentRepository.SetComponent(p1PaddleEntity.Id, p1PaddleRigidBodyComponent);
             _componentRepository.SetComponent(p1PaddleEntity.Id, p1PaddleTransformComponent);
+            _componentRepository.SetComponent(p1PaddleEntity.Id, p1PaddleMotionComponent);    
             _componentRepository.SetComponent(p1PaddleEntity.Id, p1PaddleMeshComponent);
             _componentRepository.SetComponent(p1PaddleEntity.Id, p1PaddleImageComponent);
             _componentRepository.SetComponent(p1PaddleEntity.Id, p1InputComponent);
+            _componentRepository.SetComponent(p1PaddleEntity.Id, new ImpulseComponent()
+            {
+                Impulses = new List<Impulse>()
+                {
+                    new Impulse()
+                    {
+
+                    }
+                }
+            });
+            _componentRepository.SetComponent(p1PaddleEntity.Id, new EventComponent()
+            {
+                OnCollision = (ce) => { }
+            });
 
 
-            //_collisionSystem.Register(p1PaddleEntity.Id);
             _renderSystem.Register(p1PaddleEntity.Id);
             _inputSystem.Register(p1PaddleEntity.Id);
             #endregion
@@ -208,6 +233,16 @@ namespace MonoGame.Training.Scenes
             {
                 OnCollision = (ce) => { }
             });
+            _componentRepository.SetComponent(topWallEntity.Id, new ImpulseComponent()
+            {
+                Impulses = new List<Impulse>()
+                {
+                    new Impulse()
+                    {
+
+                    }
+                }
+            });
             #endregion
 
 
@@ -251,6 +286,16 @@ namespace MonoGame.Training.Scenes
             {
                 OnCollision = (ce) => { }
             });
+            _componentRepository.SetComponent(bottomWallEntity.Id, new ImpulseComponent()
+            {
+                Impulses = new List<Impulse>()
+                {
+                    new Impulse()
+                    {
+
+                    }
+                }
+            });
             #endregion
 
 
@@ -292,7 +337,30 @@ namespace MonoGame.Training.Scenes
             _componentRepository.SetComponent(leftWallEntity.Id, leftWallTransformComponent);
             _componentRepository.SetComponent(leftWallEntity.Id, new EventComponent()
             {
-                OnCollision = (ce) => { }
+                OnCollision = (ce) => 
+                {
+                    p2Score += 1;
+
+                    var newScoreTexture = _assetRepository.GetTexture($"Pong/Score_{p2Score}");
+                    var p2ScoreTransformComponent = new TransformComponent()
+                    {
+                        Position = new Vector2(296 * _scale, 34 * _scale) - new Vector2(newScoreTexture.Width * _scale, 0)
+                    };
+                    var p2ScoreImageComponent = new ImageComponent(newScoreTexture);
+
+                    _componentRepository.SetComponent(p2ScoreEntity.Id, p2ScoreImageComponent);
+                    _componentRepository.SetComponent(p2ScoreEntity.Id, p2ScoreTransformComponent);
+                }
+            });
+            _componentRepository.SetComponent(leftWallEntity.Id, new ImpulseComponent()
+            {
+                Impulses = new List<Impulse>()
+                {
+                    new Impulse()
+                    {
+
+                    }
+                }
             });
             #endregion
 
@@ -334,7 +402,30 @@ namespace MonoGame.Training.Scenes
             _componentRepository.SetComponent(rightWallEntity.Id, rightWallTransformComponent);
             _componentRepository.SetComponent(rightWallEntity.Id, new EventComponent()
             {
-                OnCollision = (ce) => { }
+                OnCollision = (ce) => 
+                {
+                    p1Score += 1;
+
+                    var newScoreTexture = _assetRepository.GetTexture($"Pong/Score_{p1Score}");
+                    var p1ScoreTransformComponent = new TransformComponent()
+                    {
+                        Position = new Vector2(114 * _scale, 34 * _scale) - new Vector2(newScoreTexture.Width * _scale, 0)
+                    };
+                    var p1ScoreImageComponent = new ImageComponent(newScoreTexture);
+
+                    _componentRepository.SetComponent(p1ScoreEntity.Id, p1ScoreImageComponent);
+                    _componentRepository.SetComponent(p1ScoreEntity.Id, p1ScoreTransformComponent);
+                }
+            });
+            _componentRepository.SetComponent(rightWallEntity.Id, new ImpulseComponent()
+            {
+                Impulses = new List<Impulse>()
+                {
+                    new Impulse()
+                    {
+
+                    }
+                }
             });
 
             #endregion
@@ -358,17 +449,13 @@ namespace MonoGame.Training.Scenes
             };
             Random rnd = new Random();
 
-            var radians = rnd.NextDouble() * 2 * Math.PI;
-            var speed = 100;
-            var velocity = new Vector2((float)Math.Cos(radians) * speed, -(float)Math.Sin(radians) * speed);
-
             var ballTransformComponent = new TransformComponent()
             {
                 Position = new Vector2(174 * _scale, 100f)
             };
             var ballMotionComponent = new MotionComponent()
             {
-                Velocity = velocity
+                Velocity = RandomBallVelocity()
             };
             var ballImageComponent = new ImageComponent(ballTexture);
 
@@ -377,45 +464,23 @@ namespace MonoGame.Training.Scenes
             _componentRepository.SetComponent(ballEntity.Id, ballTransformComponent);
             _componentRepository.SetComponent(ballEntity.Id, ballMotionComponent);
             _componentRepository.SetComponent(ballEntity.Id, ballImageComponent);
-            _componentRepository.SetComponent(ballEntity.Id, new EventComponent()
+            _componentRepository.SetComponent(ballEntity.Id, new ImpulseComponent()
             {
-                OnCollision = (ce) =>
+                Impulses = new List<Impulse>()
                 {
-                    if (ce.EntityIds.Item2 == leftWallEntity.Id)
+                    new Impulse()
                     {
-                        p2Score += 1;
-
-                        var newScoreTexture = _assetRepository.GetTexture($"Pong/Score_{p2Score}");
-                        var p2ScoreTransformComponent = new TransformComponent()
-                        {
-                            Position = new Vector2(296 * _scale, 34 * _scale) - new Vector2(newScoreTexture.Width * _scale, 0)
-                        };
-                        var p2ScoreImageComponent = new ImageComponent(newScoreTexture);
-
-                        _componentRepository.SetComponent(p2ScoreEntity.Id, p2ScoreImageComponent);
-                        _componentRepository.SetComponent(p2ScoreEntity.Id, p2ScoreTransformComponent);
-                    }
-
-                    if (ce.EntityIds.Item2 == rightWallEntity.Id)
-                    {
-                        p1Score += 1;
-
-                        var newScoreTexture = _assetRepository.GetTexture($"Pong/Score_{p1Score}");
-                        var p1ScoreTransformComponent = new TransformComponent()
-                        {
-                            Position = new Vector2(114 * _scale, 34 * _scale) - new Vector2(newScoreTexture.Width * _scale, 0)
-                        };
-                        var p1ScoreImageComponent = new ImageComponent(newScoreTexture);
-
-                        _componentRepository.SetComponent(p1ScoreEntity.Id, p1ScoreImageComponent);
-                        _componentRepository.SetComponent(p1ScoreEntity.Id, p1ScoreTransformComponent);
+ 
                     }
                 }
             });
+            _componentRepository.SetComponent(ballEntity.Id, new EventComponent()
+            {
+                OnCollision = (ce) => { }
+            });
 
             _renderSystem.Register(ballEntity.Id);
-            _motionSystem.Register(ballEntity.Id);
-
+            _physicsSystem.Register(ballEntity.Id);
 
             // Ball needs to be first for now due to ordering in CollisionSystem WIP
             _collisionSystem.Register(ballEntity.Id);
@@ -423,14 +488,20 @@ namespace MonoGame.Training.Scenes
             _collisionSystem.Register(bottomWallEntity.Id);
             _collisionSystem.Register(leftWallEntity.Id);
             _collisionSystem.Register(rightWallEntity.Id);
+            _collisionSystem.Register(p1PaddleEntity.Id);
             #endregion
         }
 
         public override void Update(GameTime gameTime)
         {
-            _inputSystem.Update(gameTime);
             _collisionSystem.Update(gameTime);
-            _motionSystem.Update(gameTime);
+            _physicsSystem.Update(gameTime);
+
+            // Process events
+            // TODO : Process events
+
+            // Input processed at the end of Update to ensure history has evolved correctly
+            _inputSystem.Update(gameTime);
         }
 
         public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
@@ -438,6 +509,16 @@ namespace MonoGame.Training.Scenes
             spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, samplerState: SamplerState.PointWrap);
             _renderSystem.Draw(spriteBatch);
             spriteBatch.End();
+        }
+
+        private Vector2 RandomBallVelocity()
+        {
+            var rnd = new Random();
+            var radians = rnd.NextDouble() * 2 * Math.PI;
+            var speed = 300;
+            var velocity = new Vector2((float)Math.Cos(radians) * speed, -(float)Math.Sin(radians) * speed);
+
+            return velocity;
         }
     }
 }
