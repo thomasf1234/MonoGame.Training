@@ -19,6 +19,7 @@ namespace MonoGame.Training.Scenes
         private IAssetRepository _assetRepository;
         private IComponentRepository _componentRepository;
         private InputHelper _inputHelper;
+        private GraphicsHelper _graphicsHelper;
         private MetricSystem _metricSystem;
         private MotionSystem _motionSystem;
         private AnimationSystem _animationSystem;
@@ -29,11 +30,12 @@ namespace MonoGame.Training.Scenes
 
         private bool _paused;
 
-        public ChaoGardenScene(IAssetRepository assetRepository, IComponentRepository componentRepository, InputHelper inputHelper)
+        public ChaoGardenScene(IAssetRepository assetRepository, IComponentRepository componentRepository, InputHelper inputHelper, GraphicsHelper graphicsHelper)
         {
             _assetRepository = assetRepository;
             _componentRepository = componentRepository;
             _inputHelper = inputHelper;
+            _graphicsHelper = graphicsHelper;
             _paused = false;
         }
 
@@ -206,6 +208,11 @@ namespace MonoGame.Training.Scenes
 
         public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
         {
+            var graphicsDevice = _graphicsHelper.GetGraphicsDeviceManager().GraphicsDevice;
+
+
+            // Draw call
+            graphicsDevice.Clear(Color.Black);
             if (_paused)
             {
                 var grayScaleEffect = _assetRepository.GetEffect("GrayScale");

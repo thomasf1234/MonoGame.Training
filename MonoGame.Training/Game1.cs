@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Diagnostics;
 
+// https://konradzaba.github.io/blog/tech/Monogame-and-XNA-performance-cheat-sheet-Update-function/ (Optimisations)
 // https://www.youtube.com/watch?v=9Wcy4wffuJs (Static background + Camera)
 // https://www.youtube.com/watch?v=Pu7VAIs2mpg (Snow Particles)
 // https://www.youtube.com/watch?v=OLsiWxgONeM (Sprite Animation)
@@ -37,6 +38,11 @@ namespace MonoGame.Training
         private Dictionary<string, Scene> _scenesByName;
         private Scene _activeScene;
         private Stopwatch _loadingStopwatch;
+        private Stopwatch _updateStopWatch;
+        private Stopwatch _drawStopWatch;
+
+
+        private int _frame;
 
         public Game1()
         {
@@ -44,25 +50,29 @@ namespace MonoGame.Training
             _graphics.IsFullScreen = false;
             _graphics.PreferredBackBufferHeight = 160 * 5;
             _graphics.PreferredBackBufferWidth = 176 * 5;
-
-            Content.RootDirectory = "Content";
-            IsMouseVisible = false;
-            _loadingStopwatch = new Stopwatch();
-        }
-
-        protected override void Initialize()
-        {
             // https://community.monogame.net/t/the-use-of-a-fixed-time-step/9143
             /*_graphics.SynchronizeWithVerticalRetrace = false; //Vsync
             this.IsFixedTimeStep = true; // true;
             int targetFPS = 60;
             this.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0f / targetFPS);*/
 
-            _graphics.SynchronizeWithVerticalRetrace = true; //Vsync
-            this.IsFixedTimeStep = false; // true; // default;
-            int targetFPS = 60;
+            _graphics.SynchronizeWithVerticalRetrace = false; // true; //Vsync
+            this.IsFixedTimeStep = false; // false; // false; // true; // default;
+            int targetFPS = 60; // 120;
             this.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0f / targetFPS);
 
+            Content.RootDirectory = "Content";
+            IsMouseVisible = false;
+            _loadingStopwatch = new Stopwatch();
+            _frame = 0;
+            _updateStopWatch = new Stopwatch();
+            _drawStopWatch = new Stopwatch();
+            _updateStopWatch.Start();
+            _drawStopWatch.Start();
+        }
+
+        protected override void Initialize()
+        {
             // TODO: Add your initialization logic here
             _assetRepository = new AssetRepository();
             _componentRepository = new ComponentRepository();
@@ -122,6 +132,9 @@ namespace MonoGame.Training
 
         protected override void Update(GameTime gameTime)
         {
+            ++_frame;
+
+            _updateStopWatch.Restart();
             _inputHelper.Update(gameTime);
 
             var titleSceneName = "Title";
@@ -141,7 +154,7 @@ namespace MonoGame.Training
             var chaoGardenSceneName = "ChaoGarden";
             if (!_scenesByName.TryGetValue(chaoGardenSceneName, out var chaoGardenScene))
             {
-                chaoGardenScene = new ChaoGardenScene(_assetRepository, _componentRepository, _inputHelper)
+                chaoGardenScene = new ChaoGardenScene(_assetRepository, _componentRepository, _inputHelper, _graphicsHelper)
                 {
                     Name = chaoGardenSceneName
                 };
@@ -156,6 +169,16 @@ namespace MonoGame.Training
                     Name = pongSceneName
                 };
                 _scenesByName[pongSceneName] = pongScene;
+            }
+
+            var collisionSceneName = "Collision";
+            if (!_scenesByName.TryGetValue(collisionSceneName, out var collisionScene))
+            {
+                collisionScene = new CollisionScene(_assetRepository, _componentRepository, _inputHelper, _graphicsHelper)
+                {
+                    Name = collisionSceneName
+                };
+                _scenesByName[collisionSceneName] = collisionScene;
             }
 
             switch (_activeScene.GetState())
@@ -181,6 +204,11 @@ namespace MonoGame.Training
                             _activeScene = nextScene;
                             var loadTask = new Task(() => nextScene.Load());
                             loadTask.Start();
+
+                            /*_graphics.IsFullScreen = false;
+                            _graphics.PreferredBackBufferWidth = (int)(370 * 2.5);
+                            _graphics.PreferredBackBufferHeight = (int)(290 * 2.5);
+                            _graphics.ApplyChanges();*/
                             break;
                         case 2:
                             // TODO : Wait until all scenes have unloaded
@@ -193,22 +221,34 @@ namespace MonoGame.Training
                             loadPongTask.Start();
 
                             _graphics.IsFullScreen = false;
-                            // TODO : pull scene graphics requests from scene, or allow scenes to change from inside
-                            /*_graphics.PreferredBackBufferWidth = 370 * 2;
-                            _graphics.PreferredBackBufferHeight = 290 * 2;*/
-                            _graphics.PreferredBackBufferWidth = 370 * 1;
-                            _graphics.PreferredBackBufferHeight = 290 * 1;
+                            _graphics.PreferredBackBufferWidth = (int)(370 * 2);
+                            _graphics.PreferredBackBufferHeight = (int)(290 * 2);
                             _graphics.ApplyChanges();
+
+                            break;
+                        case 4:
+                            _activeScene = _scenesByName["Collision"];
+                            _scenesByName["Collision"].CameraSize = new Vector2(370, 290);
+                            var loadCollisionTask = new Task(() => _scenesByName["Collision"].Load());
+                            loadCollisionTask.Start();
+
+                            _graphics.IsFullScreen = false;
+                            _graphics.PreferredBackBufferWidth = (int)(370 * 2);
+                            _graphics.PreferredBackBufferHeight = (int)(290 * 2);
+                            _graphics.ApplyChanges();
+
                             break;
                     }
                     break;
             }
 
+            _updateStopWatch.Stop();
             base.Update(gameTime);
         }
 
         protected override void Draw(GameTime gameTime)
         {
+            _drawStopWatch.Restart();
             GraphicsDevice.Clear(Color.Black);
 
             // TODO: Add your drawing code here
@@ -236,6 +276,17 @@ namespace MonoGame.Training
             {
                 _activeScene.Draw(_spriteBatch, gameTime);
             }
+
+            //Debug.WriteLine($"Metrics Clear: {_graphics.GraphicsDevice.Metrics.ClearCount}, Draw: {_graphics.GraphicsDevice.Metrics.DrawCount}");
+            //Debug.WriteLine($"Metrics UpdateCount: {_updateCount}");
+            /* var updateTimeMs = _updateStopWatch.Elapsed.TotalMilliseconds;
+             var drawTimeMs = _drawStopWatch.Elapsed.TotalMilliseconds;
+             var totalTimeMs = updateTimeMs + drawTimeMs;
+             var elapsedTimeMs = gameTime.ElapsedGameTime.TotalMilliseconds;
+             var percentageProcessing = (totalTimeMs / elapsedTimeMs) * 100;
+             //Debug.WriteLine($"Frame {_frame} (Update, Draw, Total, Elapsed, Percentage) duration: ({Math.Round(updateTimeMs, 2)}ms, {Math.Round(drawTimeMs, 2)}ms, {Math.Round(totalTimeMs, 2)}ms, {Math.Round(elapsedTimeMs, 2)}ms, {percentageProcessing}%)");
+             */
+            Debug.WriteLine($"Frame {_frame} GC Count: {GC.CollectionCount(0)}, {GC.CollectionCount(1)}, {GC.CollectionCount(2)}");
 
             base.Draw(gameTime);
         }

@@ -16,5 +16,10 @@ namespace MonoGame.Training.Helpers
         {
             return _graphics.GraphicsDevice.Viewport.Bounds;
         }
+
+        public GraphicsDeviceManager GetGraphicsDeviceManager()
+        {
+            return _graphics;
+        }
     }
 }

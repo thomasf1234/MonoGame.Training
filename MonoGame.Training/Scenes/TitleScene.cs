@@ -44,6 +44,7 @@ namespace MonoGame.Training.Scenes
             {
                 "Continue",
                 "Pong",
+                "Collision",
                 "Options",
                 "Other",
                 "Exit"
@@ -98,6 +99,11 @@ namespace MonoGame.Training.Scenes
 
             _componentRepository.SetComponent(_mainMenuEntities[2].Id, new OnActivateComponent()
             {
+                Action = () => Exit(4)
+            });
+
+            _componentRepository.SetComponent(_mainMenuEntities[3].Id, new OnActivateComponent()
+            {
                 Action = () =>
                 {
                     foreach (var entity in _mainMenuEntities)
@@ -114,12 +120,12 @@ namespace MonoGame.Training.Scenes
                 }
             });
 
-            _componentRepository.SetComponent(_mainMenuEntities[3].Id, new OnActivateComponent()
+            _componentRepository.SetComponent(_mainMenuEntities[4].Id, new OnActivateComponent()
             {
                 Action = () => { }
             });
 
-            _componentRepository.SetComponent(_mainMenuEntities[4].Id, new OnActivateComponent()
+            _componentRepository.SetComponent(_mainMenuEntities[5].Id, new OnActivateComponent()
             {
                 Action = () => Exit(2)
             });
