@@ -7,7 +7,7 @@ namespace MonoGame.Training.Entities
     {
         public TransformComponent TransformComponent { get; set;}
         public MotionComponent MotionComponent { get; set; }
-        public ImageComponent GraphicComponent { get; set;}
+        public TextureComponent GraphicComponent { get; set;}
         public AnimationComponent AnimationComponent { get; set;}
     }
 }

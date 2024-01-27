@@ -19,9 +19,11 @@ namespace MonoGame.Training.Systems
         public void Register(Guid entityId)
         {
             EntityIds.Add(entityId);
-            OnRegister();
+            OnRegister(entityId);
         }
 
+        // TODO Only allow entity with fully setup components to register
+        // TODO Set entity signature using EnumFlags
         public void Register(List<Guid> entityIds)
         {
             foreach (var entityId in entityIds)
@@ -33,7 +35,7 @@ namespace MonoGame.Training.Systems
         public void Deregister(Guid entityId)
         {
             EntityIds.Remove(entityId);
-            OnDeregister();
+            OnDeregister(entityId);
         }
 
         public void Deregister(List<Guid> entityIds)
@@ -44,12 +46,12 @@ namespace MonoGame.Training.Systems
             }
         }
 
-        protected virtual void OnRegister()
+        protected virtual void OnRegister(Guid entityId)
         {
 
         }
 
-        protected virtual void OnDeregister()
+        protected virtual void OnDeregister(Guid entityId)
         {
 
         }

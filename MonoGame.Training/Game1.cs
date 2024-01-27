@@ -140,7 +140,7 @@ namespace MonoGame.Training
             var titleSceneName = "Title";
             if (!_scenesByName.TryGetValue(titleSceneName, out var titleScene))
             {
-                titleScene = new TitleScene(_assetRepository, _componentRepository, _inputHelper)
+                titleScene = new TitleScene(_spriteBatch, _graphics.GraphicsDevice, _assetRepository, _componentRepository, _inputHelper)
                 {
                     Name = titleSceneName
                 };
@@ -154,7 +154,7 @@ namespace MonoGame.Training
             var chaoGardenSceneName = "ChaoGarden";
             if (!_scenesByName.TryGetValue(chaoGardenSceneName, out var chaoGardenScene))
             {
-                chaoGardenScene = new ChaoGardenScene(_assetRepository, _componentRepository, _inputHelper, _graphicsHelper)
+                chaoGardenScene = new ChaoGardenScene(_spriteBatch, _graphics.GraphicsDevice, _assetRepository, _componentRepository, _inputHelper, _graphicsHelper)
                 {
                     Name = chaoGardenSceneName
                 };
@@ -164,7 +164,7 @@ namespace MonoGame.Training
             var pongSceneName = "Pong";
             if (!_scenesByName.TryGetValue(pongSceneName, out var pongScene))
             {
-                pongScene = new PongScene(_assetRepository, _componentRepository, _inputHelper, _graphicsHelper)
+                pongScene = new PongScene(_spriteBatch, _graphics.GraphicsDevice, _assetRepository, _componentRepository, _inputHelper, _graphicsHelper)
                 {
                     Name = pongSceneName
                 };
@@ -174,7 +174,7 @@ namespace MonoGame.Training
             var collisionSceneName = "Collision";
             if (!_scenesByName.TryGetValue(collisionSceneName, out var collisionScene))
             {
-                collisionScene = new CollisionScene(_assetRepository, _componentRepository, _inputHelper, _graphicsHelper)
+                collisionScene = new CollisionScene(_spriteBatch, _graphics.GraphicsDevice, _assetRepository, _componentRepository, _inputHelper, _graphicsHelper)
                 {
                     Name = collisionSceneName
                 };
@@ -274,7 +274,7 @@ namespace MonoGame.Training
             }
             else
             {
-                _activeScene.Draw(_spriteBatch, gameTime);
+                _activeScene.Draw(gameTime);
             }
 
             //Debug.WriteLine($"Metrics Clear: {_graphics.GraphicsDevice.Metrics.ClearCount}, Draw: {_graphics.GraphicsDevice.Metrics.DrawCount}");

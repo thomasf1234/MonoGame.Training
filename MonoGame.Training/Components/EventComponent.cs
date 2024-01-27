@@ -7,5 +7,6 @@ namespace MonoGame.Training.Components
     public class EventComponent : Component
     {
         public Action<CollisionEvent> OnCollision { get; set; }
+        public Action OnActivate { get; set; }
     }
 }

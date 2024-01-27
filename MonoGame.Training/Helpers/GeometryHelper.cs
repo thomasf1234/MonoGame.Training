@@ -12,7 +12,6 @@ namespace MonoGame.Training.Helpers
         public List<Triangle> Triangulate(List<Vector2> vertices)
         {
             // Clone to avoid changing original
-            vertices = vertices.ToList();
             /*if (!IsSimplePolygon(vertices, edges))
             {
                 throw new ArgumentException("The input polygon is not a simple polygon or it is self-intersecting.");
@@ -22,20 +21,24 @@ namespace MonoGame.Training.Helpers
 
             if (vertices.Count == 3)
             {
-                triangles.Add(new Triangle(vertices[0], vertices[1], vertices[2]));
+                var triangle = new Triangle(0, 1, 2);
+                triangles.Add(triangle);
                 return triangles;
             }
 
-            while (vertices.Count >= 3)
+            var remainingVertices = vertices.ToList();
+
+            while (remainingVertices.Count >= 3)
             {
-                int earTipIndex = FindEarTip(vertices);
+                int earTipIndex = FindEarTip(remainingVertices);
 
-                int prevIndex = (earTipIndex + vertices.Count - 1) % vertices.Count;
-                int nextIndex = (earTipIndex + 1) % vertices.Count;
+                int prevIndex = (earTipIndex + remainingVertices.Count - 1) % remainingVertices.Count;
+                int nextIndex = (earTipIndex + 1) % remainingVertices.Count;
 
-                triangles.Add(new Triangle(vertices[prevIndex], vertices[earTipIndex], vertices[nextIndex]));
+                var triangle = new Triangle(vertices.IndexOf(remainingVertices[prevIndex]), vertices.IndexOf(remainingVertices[earTipIndex]), vertices.IndexOf(remainingVertices[nextIndex]));
+                triangles.Add(triangle);
 
-                vertices.RemoveAt(earTipIndex);
+                remainingVertices.RemoveAt(earTipIndex);
             }
 
             return triangles;

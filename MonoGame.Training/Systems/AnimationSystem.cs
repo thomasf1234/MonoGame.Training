@@ -19,7 +19,7 @@ namespace MonoGame.Training.Systems
             foreach (var entityId in EntityIds)
             {
                 var animationComponent = _componentRepository.GetComponent<AnimationComponent>(entityId);
-                var graphicComponent = _componentRepository.GetComponent<ImageComponent>(entityId);
+                var graphicComponent = _componentRepository.GetComponent<TextureComponent>(entityId);
 
                 var activeAnimation = animationComponent.ActiveAnimation;
                 activeAnimation.ElapsedTime += gameTime.ElapsedGameTime;

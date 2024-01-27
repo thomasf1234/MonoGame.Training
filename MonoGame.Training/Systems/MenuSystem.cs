@@ -1,13 +1,10 @@
 
 using Microsoft.Xna.Framework;
-using System.Collections.Generic;
 using MonoGame.Training.Repositories;
-using Microsoft.Xna.Framework.Graphics;
-using System;
 using MonoGame.Training.Components;
-using System.Linq;
 using MonoGame.Training.Helpers;
 using Microsoft.Xna.Framework.Input;
+using System;
 
 namespace MonoGame.Training.Systems
 {
@@ -49,8 +46,8 @@ namespace MonoGame.Training.Systems
             {
                 var entityId = EntityIds[_currentSelectionIndex];
 
-                var onActivateComponent = _componentRepository.GetComponent<OnActivateComponent>(entityId);
-                onActivateComponent.Action.Invoke();
+                var eventComponent = _componentRepository.GetComponent<EventComponent>(entityId);
+                eventComponent.OnActivate.Invoke();
             }
 
             for (int i = 0; i < EntityIds.Count; ++i)
@@ -63,9 +60,9 @@ namespace MonoGame.Training.Systems
             }
         }
 
-        protected override void OnDeregister()
+        protected override void OnDeregister(Guid entityId)
         {
-            base.OnDeregister();
+            base.OnDeregister(entityId);
 
             _currentSelectionIndex = 0;
         }

@@ -23,14 +23,14 @@ namespace MonoGame.Training.Scenes
         private MetricSystem _metricSystem;
         private MotionSystem _motionSystem;
         private AnimationSystem _animationSystem;
-        private RenderSystem _renderSystem;
+        private SpriteRenderSystem _renderSystem;
         private TextRenderSystem _textRenderSystem;
 
         private IChaoStateMachine _chaoStateMachine;
 
         private bool _paused;
 
-        public ChaoGardenScene(IAssetRepository assetRepository, IComponentRepository componentRepository, InputHelper inputHelper, GraphicsHelper graphicsHelper)
+        public ChaoGardenScene(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, IAssetRepository assetRepository, IComponentRepository componentRepository, InputHelper inputHelper, GraphicsHelper graphicsHelper) : base(spriteBatch, graphicsDevice)
         {
             _assetRepository = assetRepository;
             _componentRepository = componentRepository;
@@ -95,7 +95,7 @@ namespace MonoGame.Training.Scenes
                     Velocity = Vector2.Zero,
                     Acceleration = Vector2.Zero
                 },
-                GraphicComponent = new ImageComponent(chaoSpritesTexture)
+                GraphicComponent = new TextureComponent(chaoSpritesTexture)
                 {
                     Rectangle = new Rectangle(0, 0, 21, 24)
                 },
@@ -118,7 +118,7 @@ namespace MonoGame.Training.Scenes
                 {
                     Position = new Vector2(0, 0)
                 },
-                GraphicComponent = new ImageComponent(chaoGardenTexture)
+                GraphicComponent = new TextureComponent(chaoGardenTexture)
             };
 
             // Persist data
@@ -144,7 +144,7 @@ namespace MonoGame.Training.Scenes
             _animationSystem = new AnimationSystem(_componentRepository);
             _animationSystem.Register(new List<Guid>() { chaoEntity.Id });
 
-            _renderSystem = new RenderSystem(_componentRepository);
+            _renderSystem = new SpriteRenderSystem(_componentRepository, SpriteBatch);
             _renderSystem.Register(new List<Guid>() { backgroundEntity.Id, chaoEntity.Id });
 
             _textRenderSystem = new TextRenderSystem(_componentRepository, _assetRepository);
@@ -206,10 +206,9 @@ namespace MonoGame.Training.Scenes
             _animationSystem.Update(gameTime);
         }
 
-        public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
+        public override void Draw(GameTime gameTime)
         {
             var graphicsDevice = _graphicsHelper.GetGraphicsDeviceManager().GraphicsDevice;
-
 
             // Draw call
             graphicsDevice.Clear(Color.Black);
@@ -220,15 +219,15 @@ namespace MonoGame.Training.Scenes
 
                 // TODO : Pass spriteBatch to each scene
                 // Shader must be applied at sprite batch begin, affecting all sprites drawn during spritebatch.End(). SortMode.Deferred waits until spriteBatch.End() to draw
-                spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, samplerState: SamplerState.PointWrap, effect: grayScaleEffect);
+                SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, samplerState: SamplerState.PointWrap, effect: grayScaleEffect);
 
             }
             else
             {
-                spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, samplerState: SamplerState.PointWrap);
+                SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, samplerState: SamplerState.PointWrap);
             }
 
-            _renderSystem.Draw(spriteBatch);
+            _renderSystem.Draw(gameTime);
 
             var font = _assetRepository.GetFont("Arial");
 
@@ -241,13 +240,13 @@ namespace MonoGame.Training.Scenes
                 // Calculate the center of the screen
                 var center = new Vector2(200, 200); //_graphics.GraphicsDevice.Viewport.Bounds.Center.ToVector2();
                 var v = new Vector2(font.MeasureString(pausedText).X / 2, 0);
-                spriteBatch.DrawString(font, pausedText, center - v + new Vector2(2, 2), Color.Black);
-                spriteBatch.DrawString(font, pausedText, center - v, Color.White);
+                SpriteBatch.DrawString(font, pausedText, center - v + new Vector2(2, 2), Color.Black);
+                SpriteBatch.DrawString(font, pausedText, center - v, Color.White);
             }
 
-            _textRenderSystem.Draw(spriteBatch);
+            _textRenderSystem.Draw(SpriteBatch);
 
-            spriteBatch.End();
+            SpriteBatch.End();
         }
     }
 }

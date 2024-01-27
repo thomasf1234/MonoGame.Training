@@ -14,9 +14,14 @@ namespace MonoGame.Training.Scenes
         public int ExitCode { get; private set; }
         private StateMachine<SceneState, SceneTrigger> _stateMachine;
         private StateMachine<SceneState, SceneTrigger>.TriggerWithParameters<int> _exitTrigger;
+        protected SpriteBatch SpriteBatch;
+        protected GraphicsDevice GraphicsDevice;
 
-        public Scene()
+        public Scene(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
         {
+            SpriteBatch = spriteBatch;
+            GraphicsDevice = graphicsDevice;
+
             _stateMachine = new StateMachine<SceneState, SceneTrigger>(SceneState.Unloaded);
 
             _exitTrigger = _stateMachine.SetTriggerParameters<int>(SceneTrigger.Exit);
@@ -27,7 +32,8 @@ namespace MonoGame.Training.Scenes
 
             _stateMachine.Configure(SceneState.Loading)
                 .Permit(SceneTrigger.FinishLoading, SceneState.Loaded)
-                .OnEntry(() => {
+                .OnEntry(() =>
+                {
                     OnLoading();
                     _stateMachine.FireAsync(SceneTrigger.FinishLoading);
                 });
@@ -69,7 +75,7 @@ namespace MonoGame.Training.Scenes
         }
 
         public abstract void Update(GameTime gameTime);
-        public abstract void Draw(SpriteBatch spriteBatch, GameTime gameTime);
+        public abstract void Draw(GameTime gameTime);
         public void Load()
         {
             _stateMachine.FireAsync(SceneTrigger.StartLoading);

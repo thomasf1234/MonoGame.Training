@@ -32,7 +32,7 @@ namespace MonoGame.Training.Systems
             {
                 var textComponent = _componentRepository.GetComponent<TextComponent>(entityId);
                 var transformComponent = _componentRepository.GetComponent<TransformComponent>(entityId);
-                var meshComponent = _componentRepository.GetComponent<MeshComponent>(entityId);
+                //var meshComponent = _componentRepository.GetComponent<MeshComponent>(entityId);
 
                 var font = _assetRepository.GetFont(textComponent.FontId);
                 var scale = 1f; //5f; // Figure out how to addess scale for drawString;

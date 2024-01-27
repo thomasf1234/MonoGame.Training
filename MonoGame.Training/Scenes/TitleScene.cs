@@ -1,18 +1,12 @@
 ﻿using Microsoft.Xna.Framework;
 using MonoGame.Training.Components;
-using MonoGame.Training.Constants;
 using MonoGame.Training.Entities;
-using MonoGame.Training.Models;
 using MonoGame.Training.Repositories;
-using MonoGame.Training.StateMachines;
 using MonoGame.Training.Systems;
 using System.Collections.Generic;
 using System;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 using MonoGame.Training.Helpers;
-using System.Diagnostics;
-using System.Threading;
 
 // https://badecho.com/index.php/2023/08/02/alpha-spritebatch/
 namespace MonoGame.Training.Scenes
@@ -25,188 +19,73 @@ namespace MonoGame.Training.Scenes
         private MenuSystem _menuSystem;
         private TextRenderSystem _textRenderSystem;
 
-        private List<Entity> _mainMenuEntities;
-        private List<Entity> _optionsMenuEntities;
-
-
-        public TitleScene(IAssetRepository assetRepository, IComponentRepository componentRepository, InputHelper inputHelper)
+        public TitleScene(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, IAssetRepository assetRepository, IComponentRepository componentRepository, InputHelper inputHelper) : base(spriteBatch, graphicsDevice)
         {
             _assetRepository = assetRepository;
             _componentRepository = componentRepository;
             _inputHelper = inputHelper;
-
         }
 
         protected override void OnLoading()
         {
-            _mainMenuEntities = new List<Entity>();
-            var menuItems = new List<string>()
-            {
-                "Continue",
-                "Pong",
-                "Collision",
-                "Options",
-                "Other",
-                "Exit"
-            };
-
-            for (int i = 0; i < menuItems.Count; ++i)
-            {
-                var menuItem = menuItems[i];
-
-                var menuItemEntity = new Entity() { Id = Guid.NewGuid() };
-                _mainMenuEntities.Add(menuItemEntity);
-
-                var textComponent = new TextComponent()
-                {
-                    FontId = "Arial",
-                    Color = Color.Gray,
-                    Opacity = 1f,
-                    Text = menuItem
-                };
-
-                var meshComponent = new MeshComponent()
-                {
-                    Vertices = new List<Vector2>()
-                    {
-                        new Vector2(0, 0),
-                        new Vector2(100, 0),
-                        new Vector2(100, 35),
-                        new Vector2(0, 35)
-                    }
-                };
-
-                var transformComponent = new TransformComponent()
-                {
-                    Position = new Vector2(100, 100 + 35 * i)
-                };
-
-                _componentRepository.SetComponent(menuItemEntity.Id, textComponent);
-                _componentRepository.SetComponent(menuItemEntity.Id, meshComponent);
-                _componentRepository.SetComponent(menuItemEntity.Id, transformComponent);
-            }
-
-            _componentRepository.SetComponent(_mainMenuEntities[0].Id, new OnActivateComponent()
-            {
-                Action = () => Exit(1)
-            });
-
-
-            _componentRepository.SetComponent(_mainMenuEntities[1].Id, new OnActivateComponent()
-            {
-                Action = () => Exit(3)
-            });
-
-            _componentRepository.SetComponent(_mainMenuEntities[2].Id, new OnActivateComponent()
-            {
-                Action = () => Exit(4)
-            });
-
-            _componentRepository.SetComponent(_mainMenuEntities[3].Id, new OnActivateComponent()
-            {
-                Action = () =>
-                {
-                    foreach (var entity in _mainMenuEntities)
-                    {
-                        _menuSystem.Deregister(entity.Id);
-                        _textRenderSystem.Deregister(entity.Id);
-                    }
-
-                    foreach (var entity in _optionsMenuEntities)
-                    {
-                        _menuSystem.Register(entity.Id);
-                        _textRenderSystem.Register(entity.Id);
-                    }
-                }
-            });
-
-            _componentRepository.SetComponent(_mainMenuEntities[4].Id, new OnActivateComponent()
-            {
-                Action = () => { }
-            });
-
-            _componentRepository.SetComponent(_mainMenuEntities[5].Id, new OnActivateComponent()
-            {
-                Action = () => Exit(2)
-            });
-
+            #region Initialise Systems
             _textRenderSystem = new TextRenderSystem(_componentRepository, _assetRepository);
             _menuSystem = new MenuSystem(_componentRepository, _inputHelper);
-            
-            foreach (var entity in _mainMenuEntities)
+            #endregion
+
+            #region Main Menu Entities
+            var demosMenuItemEntity = CreateMenuItemEntity("Demos", 0);
+            var optionsMenuEntity = CreateMenuItemEntity("Options", 1);
+            var exitMenuEntity = CreateMenuItemEntity("Exit", 2);
+
+            var mainMenuEntities = new List<Entity>()
             {
-                _textRenderSystem.Register(entity.Id);
-                _menuSystem.Register(entity.Id);
-            }
-
-            // Delay to see loading screen
-            //Thread.Sleep(2000);
-
-
-
-
-            // Options Submenu
-
-            _optionsMenuEntities = new List<Entity>();
-
-            var optionsMenuItems = new List<string>()
-            {
-                "Screen",
-                "Back"
+                demosMenuItemEntity,
+                optionsMenuEntity,
+                exitMenuEntity
             };
+            #endregion
 
-            for (int i = 0; i < optionsMenuItems.Count; ++i)
+            #region Demos Submenu Entities
+            var demosTinyChaoGardenMenuItemEntity = CreateMenuItemEntity("Tiny Chao Garden", 0);
+            var demosPongMenuItemEntity = CreateMenuItemEntity("Pong", 1);
+            var demosCollisionTestMenuItemEntity = CreateMenuItemEntity("Collision Test", 2);
+            var demosPalletTownTestMenuItemEntity = CreateMenuItemEntity("Pallet Town", 3);
+            var demosBackMenuItemEntity = CreateMenuItemEntity("Back", 4);
+
+            var demosSubmenuEntities = new List<Entity>()
             {
-                var menuItem = optionsMenuItems[i];
+                demosTinyChaoGardenMenuItemEntity,
+                demosPongMenuItemEntity,
+                demosCollisionTestMenuItemEntity,
+                demosPalletTownTestMenuItemEntity,
+                demosBackMenuItemEntity
+            };
+            #endregion
 
-                var menuItemEntity = new Entity() { Id = Guid.NewGuid() };
-                _optionsMenuEntities.Add(menuItemEntity);
+            #region Options Submenu Entities
+            var optionsScreenMenuItemEntity = CreateMenuItemEntity("Screen", 0);
+            var optionsBackMenuItemEntity = CreateMenuItemEntity("Back", 1);
 
-                var textComponent = new TextComponent()
-                {
-                    FontId = "Arial",
-                    Color = Color.Gray,
-                    Opacity = 1f,
-                    Text = menuItem
-                };
-
-                var meshComponent = new MeshComponent()
-                {
-                    Vertices = new List<Vector2>()
-                    {
-                        new Vector2(0, 0),
-                        new Vector2(100, 0),
-                        new Vector2(100, 35),
-                        new Vector2(0, 35)
-                    }
-                };
-
-                var transformComponent = new TransformComponent()
-                {
-                    Position = new Vector2(100, 100 + 35 * i)
-                };
-
-                _componentRepository.SetComponent(menuItemEntity.Id, textComponent);
-                _componentRepository.SetComponent(menuItemEntity.Id, meshComponent);
-                _componentRepository.SetComponent(menuItemEntity.Id, transformComponent);
-            }
-
-            _componentRepository.SetComponent(_optionsMenuEntities[0].Id, new OnActivateComponent()
+            var optionsSubmenuEntities = new List<Entity>()
             {
-                Action = () => { }
-            });
+                optionsScreenMenuItemEntity,
+                optionsBackMenuItemEntity
+            };
+            #endregion
 
-            _componentRepository.SetComponent(_optionsMenuEntities[1].Id, new OnActivateComponent()
+            #region Main Menu Events
+            _componentRepository.SetComponent(demosMenuItemEntity.Id, new EventComponent()
             {
-                Action = () =>
+                OnActivate = () =>
                 {
-                    foreach (var entity in _optionsMenuEntities)
+                    foreach (var entity in mainMenuEntities)
                     {
                         _menuSystem.Deregister(entity.Id);
                         _textRenderSystem.Deregister(entity.Id);
                     }
 
-                    foreach (var entity in _mainMenuEntities)
+                    foreach (var entity in demosSubmenuEntities)
                     {
                         _menuSystem.Register(entity.Id);
                         _textRenderSystem.Register(entity.Id);
@@ -214,21 +93,151 @@ namespace MonoGame.Training.Scenes
                 }
             });
 
-        }
+            _componentRepository.SetComponent(optionsMenuEntity.Id, new EventComponent()
+            {
+                OnActivate = () =>
+                {
+                    foreach (var entity in mainMenuEntities)
+                    {
+                        _menuSystem.Deregister(entity.Id);
+                        _textRenderSystem.Deregister(entity.Id);
+                    }
 
+                    foreach (var entity in optionsSubmenuEntities)
+                    {
+                        _menuSystem.Register(entity.Id);
+                        _textRenderSystem.Register(entity.Id);
+                    }
+                }
+            });
+
+            _componentRepository.SetComponent(exitMenuEntity.Id, new EventComponent()
+            {
+                OnActivate = () => Exit(2)
+            });
+            #endregion
+
+            #region Demos Submenu Events
+            _componentRepository.SetComponent(demosTinyChaoGardenMenuItemEntity.Id, new EventComponent()
+            {
+                OnActivate = () => Exit(1)
+            });
+
+            _componentRepository.SetComponent(demosPongMenuItemEntity.Id, new EventComponent()
+            {
+                OnActivate = () => Exit(3)
+            });
+
+            _componentRepository.SetComponent(demosCollisionTestMenuItemEntity.Id, new EventComponent()
+            {
+                OnActivate = () => Exit(4)
+            });
+
+            _componentRepository.SetComponent(demosPalletTownTestMenuItemEntity.Id, new EventComponent()
+            {
+                OnActivate = () => { }
+            });
+
+            _componentRepository.SetComponent(demosBackMenuItemEntity.Id, new EventComponent()
+            {
+                OnActivate = () =>
+                {
+                    foreach (var entity in demosSubmenuEntities)
+                    {
+                        _menuSystem.Deregister(entity.Id);
+                        _textRenderSystem.Deregister(entity.Id);
+                    }
+
+                    foreach (var entity in mainMenuEntities)
+                    {
+                        _menuSystem.Register(entity.Id);
+                        _textRenderSystem.Register(entity.Id);
+                    }
+                }
+            });
+            #endregion
+
+            #region Options Submenu Events
+            _componentRepository.SetComponent(optionsScreenMenuItemEntity.Id, new EventComponent()
+            {
+                OnActivate = () => { }
+            });
+
+            _componentRepository.SetComponent(optionsBackMenuItemEntity.Id, new EventComponent()
+            {
+                OnActivate = () =>
+                {
+                    foreach (var entity in optionsSubmenuEntities)
+                    {
+                        _menuSystem.Deregister(entity.Id);
+                        _textRenderSystem.Deregister(entity.Id);
+                    }
+
+                    foreach (var entity in mainMenuEntities)
+                    {
+                        _menuSystem.Register(entity.Id);
+                        _textRenderSystem.Register(entity.Id);
+                    }
+                }
+            });
+            #endregion
+
+            #region Register Main Menu
+            foreach (var entity in mainMenuEntities)
+            {
+                _menuSystem.Register(entity.Id);
+                _textRenderSystem.Register(entity.Id);
+            }
+            #endregion
+        }
 
         public override void Update(GameTime gameTime)
         {
             _menuSystem.Update(gameTime);
         }
 
-        public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
+        public override void Draw(GameTime gameTime)
         {
-            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, samplerState: SamplerState.PointWrap);
+            SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, samplerState: SamplerState.PointWrap);
             
-            _textRenderSystem.Draw(spriteBatch);
+            _textRenderSystem.Draw(SpriteBatch);
 
-            spriteBatch.End();
+            SpriteBatch.End();
+        }
+
+        private Entity CreateMenuItemEntity(string text, int index)
+        {
+            var menuItemEntity = new Entity() { Id = Guid.NewGuid() };
+
+            var textComponent = new TextComponent()
+            {
+                FontId = "Arial",
+                Color = Color.Gray,
+                Opacity = 1f,
+                Text = text
+            };
+
+            var meshComponent = new MeshComponent()
+            {
+                Vertices = new List<Vector2>()
+                    {
+                        new Vector2(0, 0),
+                        new Vector2(100, 0),
+                        new Vector2(100, 35),
+                        new Vector2(0, 35)
+                    }
+            };
+
+            var transformComponent = new TransformComponent()
+            {
+                Position = new Vector2(100, 100 + 35 * index)
+            };
+
+            _componentRepository.SetComponent(menuItemEntity.Id, textComponent);
+            _componentRepository.SetComponent(menuItemEntity.Id, meshComponent);
+            _componentRepository.SetComponent(menuItemEntity.Id, transformComponent);
+
+            return menuItemEntity;
         }
     }
 }

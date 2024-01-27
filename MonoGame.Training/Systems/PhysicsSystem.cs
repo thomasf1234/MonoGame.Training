@@ -58,7 +58,7 @@ namespace MonoGame.Training.Systems
                         // Round to 0 when close
                         v.X = Math.Abs(v.X) < 0.001 ? 0 : v.X;
                         v.Y = Math.Abs(v.Y) < 0.001 ? 0 : v.Y;
-                        Debug.WriteLine($"Under Force: f = ({f.X}, {f.Y}) s = ({s.X}, {s.Y}), v = {v.Length()} ({v.X}, {v.Y}) @ {gameTime.TotalGameTime.TotalSeconds}s");
+                        //Debug.WriteLine($"Under Force: f = ({f.X}, {f.Y}) s = ({s.X}, {s.Y}), v = {v.Length()} ({v.X}, {v.Y}) @ {gameTime.TotalGameTime.TotalSeconds}s");
                     }
                 }
 

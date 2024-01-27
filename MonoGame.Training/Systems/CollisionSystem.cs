@@ -184,8 +184,8 @@ namespace MonoGame.Training.Systems
             // y_A = (m_A * x_A) + c_A;
 
             // 3) Calculate y(x) for B
-            var s1_B = transformComponentB.Position + meshComponentB.Vertices[meshComponentB.Edges[0].Item1];
-            var s2_B = transformComponentB.Position + meshComponentB.Vertices[meshComponentB.Edges[0].Item2];
+            var s1_B = transformComponentB.Position + meshComponentB.Vertices[meshComponentB.Edges[0].Vertex1];
+            var s2_B = transformComponentB.Position + meshComponentB.Vertices[meshComponentB.Edges[0].Vertex2];
 
             var sX1_B = s1_B.X;
             var sY1_B = s1_B.Y;

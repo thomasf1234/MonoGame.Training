@@ -47,10 +47,5 @@ namespace MonoGame.Training.Systems
                 }
             }
         }
-
-        protected override void OnDeregister()
-        {
-            base.OnDeregister();
-        }
     }
 }

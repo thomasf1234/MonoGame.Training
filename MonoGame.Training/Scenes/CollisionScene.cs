@@ -14,6 +14,7 @@ using System.Linq;
 using MonoGame.Training.Models.Geometry;
 
 // https://badecho.com/index.php/2023/08/02/alpha-spritebatch/
+// http://rbwhitaker.wikidot.com/index-and-vertex-buffers
 namespace MonoGame.Training.Scenes
 {
     public class CollisionScene : Scene
@@ -23,7 +24,7 @@ namespace MonoGame.Training.Scenes
         private InputHelper _inputHelper;
         private IComponentRepository _componentRepository;
 
-        private RenderSystem _renderSystem;
+        private PrimitiveRenderSystem _renderSystem;
         private InputSystem _inputSystem;
         private PhysicsSystem _physicsSystem;
         private CollisionSystem _collisionSystem;
@@ -34,12 +35,9 @@ namespace MonoGame.Training.Scenes
         private Rectangle _actualScreenRectangle;
 
         private float _scale;
-        private BasicEffect _basicEffect;
-        private VertexBuffer _vertexBuffer;
-        private VertexPositionColor[] _vertices;
         private Polygon _polygon;
 
-        public CollisionScene(IAssetRepository assetRepository, IComponentRepository componentRepository, InputHelper inputHelper, GraphicsHelper graphicsHelper)
+        public CollisionScene(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, IAssetRepository assetRepository, IComponentRepository componentRepository, InputHelper inputHelper, GraphicsHelper graphicsHelper) : base(spriteBatch, graphicsDevice)
         {
             _assetRepository = assetRepository;
             _componentRepository = componentRepository;
@@ -53,15 +51,7 @@ namespace MonoGame.Training.Scenes
             // Initialization
             _actualScreenRectangle = new Rectangle(0, 0, (int)(370 * _scale), (int)(290 * _scale));
 
-            Matrix worldMatrix = Matrix.Identity;
-            Matrix viewMatrix = Matrix.Identity;
-            Matrix projectionMatrix = Matrix.CreateTranslation(-0.5f, -0.5f, 0) * Matrix.CreateOrthographicOffCenter(_actualScreenRectangle.X, _actualScreenRectangle.Width, _actualScreenRectangle.Height, _actualScreenRectangle.Y, 0, 1);
-
-            _basicEffect = new BasicEffect(_graphicsHelper.GetGraphicsDeviceManager().GraphicsDevice);
-            _basicEffect.World = worldMatrix;
-            _basicEffect.View = viewMatrix;
-            _basicEffect.Projection = projectionMatrix;
-
+            #region Create polygon entity
             var geometryHelper = new GeometryHelper();
             var polygonFactory = new PolygonFactory(geometryHelper);
 
@@ -76,56 +66,63 @@ namespace MonoGame.Training.Scenes
 
             _polygon = polygonFactory.Create(vertices);
 
-            _vertices = new VertexPositionColor[_polygon.Triangles.Count*3];
-
-            for (int i=0; i< _polygon.Triangles.Count; ++i)
+            var polygon1Entity = new Entity() { Id = Guid.NewGuid() };
+            var meshComponent = new MeshComponent()
             {
-                var triangle = _polygon.Triangles[i];
+                Vertices = _polygon.Vertices,
+                Edges = _polygon.Edges,
+                Triangles = _polygon.Triangles
+            };
+            var transformComponent = new TransformComponent()
+            {
+                Position = Vector2.Zero
+            };
+            var inputComponent = new InputComponent()
+            {
+                OnMouseMove = (x, y) =>
+                {
+                    /*var maxY = (_graphicsHelper.GetWindowBounds().Height / _scale) - (p1PaddleTextureComponent.Rectangle.Height);
 
-                var index = i * 3;
-                var color = Color.Red;
+                    x = x / _scale;
+                    y = y / _scale;
+                    y = y > maxY ? maxY : y;*/
 
-                _vertices[index] = new VertexPositionColor(new Vector3(triangle.Vertex1.X, -triangle.Vertex1.Y, 0), color);
-                _vertices[index+1] = new VertexPositionColor(new Vector3(triangle.Vertex2.X, -triangle.Vertex2.Y, 0), color);
-                _vertices[index+2] = new VertexPositionColor(new Vector3(triangle.Vertex3.X, -triangle.Vertex3.Y, 0), color);
-            }
+                    transformComponent.Position = new Vector2(x, y);
+                }
+            };
 
-            _vertexBuffer = new VertexBuffer(_graphicsHelper.GetGraphicsDeviceManager().GraphicsDevice, typeof(VertexPositionColor), _vertices.Count(), BufferUsage.WriteOnly);
-            _vertexBuffer.SetData<VertexPositionColor>(_vertices);
-            
-            _basicEffect.VertexColorEnabled = true;
+            _componentRepository.SetComponent(polygon1Entity.Id, meshComponent);
+            _componentRepository.SetComponent(polygon1Entity.Id, transformComponent);
+            _componentRepository.SetComponent(polygon1Entity.Id, inputComponent);
+            #endregion
+
+            #region Initialise Systems
+            _renderSystem = new PrimitiveRenderSystem(_componentRepository, GraphicsDevice);
+            _inputSystem = new InputSystem(_componentRepository, _inputHelper, _graphicsHelper);
+            #endregion
+
+            #region Register Entities
+            _inputSystem.Register(polygon1Entity.Id);
+            _renderSystem.Register(polygon1Entity.Id);
+            #endregion
         }
 
         public override void Update(GameTime gameTime)
         {
-            var mouseXY = _inputHelper.GetMousePosition();
-
-            _basicEffect.World = Matrix.CreateTranslation(mouseXY.X, mouseXY.Y, 0);
+            _inputSystem.Update(gameTime);
         }
 
-        public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
+        public override void Draw(GameTime gameTime)
         {
-            var graphicsDevice = _graphicsHelper.GetGraphicsDeviceManager().GraphicsDevice;
-
             // Draw call
             //graphicsDevice.SetRenderTarget(_nativeRenderTarget);
-            graphicsDevice.Clear(Color.Black);
+            GraphicsDevice.Clear(Color.Black);
 
-            graphicsDevice.SetVertexBuffer(_vertexBuffer);
-
-            RasterizerState rasterizerState = new RasterizerState();
-            rasterizerState.CullMode = CullMode.None;
-            graphicsDevice.RasterizerState = rasterizerState;
-
-            foreach (EffectPass pass in _basicEffect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, _polygon.Triangles.Count());
-            }
+            _renderSystem.Draw(gameTime);
 
             // now render your game like you normally would, but if you change the render target somewhere,
             // make sure you set it back to this one and not the backbuffer
-            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, samplerState: SamplerState.PointWrap);
+            SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, samplerState: SamplerState.PointWrap);
             /* _renderSystem.Draw(spriteBatch);
              _textRenderSystem.Draw(spriteBatch);*/
           /*  DrawLine(spriteBatch, new Vector2(mouseXY.X, mouseXY.Y), new Vector2(mouseXY.X + 50, mouseXY.Y), Color.Green);
@@ -135,7 +132,7 @@ namespace MonoGame.Training.Scenes
 
 
 
-            spriteBatch.End();
+            SpriteBatch.End();
 
             // after drawing the game at native resolution we can render _nativeRenderTarget to the backbuffer!
             // First set the GraphicsDevice target back to the backbuffer
@@ -146,7 +143,7 @@ namespace MonoGame.Training.Scenes
             spriteBatch.End(); */
         }
 
-        private Texture2D _texture;
+/*        private Texture2D _texture;
         private Texture2D GetTexture(SpriteBatch spriteBatch)
         {
             if (_texture == null)
@@ -170,6 +167,18 @@ namespace MonoGame.Training.Scenes
             var origin = new Vector2(0f, 0.5f);
             var scale = new Vector2(length, thickness);
             spriteBatch.Draw(GetTexture(spriteBatch), point, null, color, angle, origin, scale, SpriteEffects.None, 0);
-        }
+        }*/
     }
 }
+
+/*for (var i = 0; i < _VertexBuffers.Length; i++)
+{
+    GraphicsDevice.SetVertexBuffer(_VertexBuffers[i]);
+    GraphicsDevice.Indices = _IndexBuffers[i];
+
+    GraphicsDevice.DrawIndexedPrimitives(
+      PrimitiveType.TriangleList,
+      0,
+      0,
+      _Slices[i].PrimitiveCount);
+}*/

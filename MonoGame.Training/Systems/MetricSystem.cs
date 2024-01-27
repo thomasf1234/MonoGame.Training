@@ -9,6 +9,13 @@ using System.Linq;
 
 namespace MonoGame.Training.Systems
 {
+    /*
+    Frame Rate
+    Draw Call
+    Frame Time (ms)
+    Triangle Count
+    Game Logic (ms)
+     */
     public class MetricSystem : System
     {
         private Stopwatch _stopwatch;

@@ -8,6 +8,7 @@ using System;
 using MonoGame.Training.Systems;
 using System.Collections.Generic;
 using MonoGame.Training.Models;
+using MonoGame.Training.Models.Geometry;
 
 // https://badecho.com/index.php/2023/08/02/alpha-spritebatch/
 namespace MonoGame.Training.Scenes
@@ -19,7 +20,7 @@ namespace MonoGame.Training.Scenes
         private InputHelper _inputHelper;
         private IComponentRepository _componentRepository;
 
-        private RenderSystem _renderSystem;
+        private SpriteRenderSystem _renderSystem;
         private InputSystem _inputSystem;
         private PhysicsSystem _physicsSystem;
         private CollisionSystem _collisionSystem;
@@ -35,7 +36,7 @@ namespace MonoGame.Training.Scenes
         private int p1Score;
         private int p2Score;
 
-        public PongScene(IAssetRepository assetRepository, IComponentRepository componentRepository, InputHelper inputHelper, GraphicsHelper graphicsHelper)
+        public PongScene(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, IAssetRepository assetRepository, IComponentRepository componentRepository, InputHelper inputHelper, GraphicsHelper graphicsHelper) : base(spriteBatch, graphicsDevice)
         {
             _assetRepository = assetRepository;
             _componentRepository = componentRepository;
@@ -59,7 +60,7 @@ namespace MonoGame.Training.Scenes
             var paddleTexture = _assetRepository.GetTexture("Pong/Paddle");
 
             #region Initialise Systems
-            _renderSystem = new RenderSystem(_componentRepository);
+            _renderSystem = new SpriteRenderSystem(_componentRepository, SpriteBatch);
             _inputSystem = new InputSystem(_componentRepository, _inputHelper, _graphicsHelper);
             _physicsSystem = new PhysicsSystem(_componentRepository);
             _collisionSystem = new CollisionSystem(_componentRepository);
@@ -100,10 +101,10 @@ namespace MonoGame.Training.Scenes
                 Position = new Vector2(174, 17)
             };
 
-            var netImageComponent = new ImageComponent(netTexture);
+            var netTextureComponent = new TextureComponent(netTexture);
 
             _componentRepository.SetComponent(netEntity.Id, netTransformComponent);
-            _componentRepository.SetComponent(netEntity.Id, netImageComponent);
+            _componentRepository.SetComponent(netEntity.Id, netTextureComponent);
 
             _renderSystem.Register(netEntity.Id);
             #endregion
@@ -118,10 +119,10 @@ namespace MonoGame.Training.Scenes
             {
                 Position = new Vector2(114, 34) - new Vector2(_assetRepository.GetTexture("Pong/Score_0").Width, 0)
             };
-            var p1ScoreImageComponent = new ImageComponent(score0Texture);
+            var p1ScoreTextureComponent = new TextureComponent(score0Texture);
 
             _componentRepository.SetComponent(p1ScoreEntity.Id, p1ScoreTransformComponent);
-            _componentRepository.SetComponent(p1ScoreEntity.Id, p1ScoreImageComponent);
+            _componentRepository.SetComponent(p1ScoreEntity.Id, p1ScoreTextureComponent);
 
             _renderSystem.Register(p1ScoreEntity.Id);
             #endregion
@@ -135,10 +136,10 @@ namespace MonoGame.Training.Scenes
             {
                 Position = new Vector2(296, 34) - new Vector2(_assetRepository.GetTexture("Pong/Score_0").Width, 0)
             };
-            var p2ScoreImageComponent = new ImageComponent(score0Texture);
+            var p2ScoreTextureComponent = new TextureComponent(score0Texture);
 
             _componentRepository.SetComponent(p2ScoreEntity.Id, p2ScoreTransformComponent);
-            _componentRepository.SetComponent(p2ScoreEntity.Id, p2ScoreImageComponent);
+            _componentRepository.SetComponent(p2ScoreEntity.Id, p2ScoreTextureComponent);
 
             _renderSystem.Register(p2ScoreEntity.Id);
             #endregion
@@ -169,17 +170,17 @@ namespace MonoGame.Training.Scenes
                     new Vector2(4, 14)
 
                 },
-                Edges = new List<Tuple<int, int>>()
+                Edges = new List<Edge>()
                 {
-                    new Tuple<int, int>(0, 1)
+                    new Edge(0, 1)
                 }
             };
-            var p1PaddleImageComponent = new ImageComponent(paddleTexture);
+            var p1PaddleTextureComponent = new TextureComponent(paddleTexture);
             var p1InputComponent = new InputComponent()
             {
                 OnMouseMove = (x, y) =>
                 {
-                    var maxY = (_graphicsHelper.GetWindowBounds().Height / _scale) - (p1PaddleImageComponent.Rectangle.Height);
+                    var maxY = (_graphicsHelper.GetWindowBounds().Height / _scale) - (p1PaddleTextureComponent.Rectangle.Height);
 
                     x = x / _scale;
                     y = y / _scale;
@@ -193,7 +194,7 @@ namespace MonoGame.Training.Scenes
             _componentRepository.SetComponent(p1PaddleEntity.Id, p1PaddleTransformComponent);
             _componentRepository.SetComponent(p1PaddleEntity.Id, p1PaddleMotionComponent);    
             _componentRepository.SetComponent(p1PaddleEntity.Id, p1PaddleMeshComponent);
-            _componentRepository.SetComponent(p1PaddleEntity.Id, p1PaddleImageComponent);
+            _componentRepository.SetComponent(p1PaddleEntity.Id, p1PaddleTextureComponent);
             _componentRepository.SetComponent(p1PaddleEntity.Id, p1InputComponent);
             _componentRepository.SetComponent(p1PaddleEntity.Id, new ImpulseComponent()
             {
@@ -224,10 +225,10 @@ namespace MonoGame.Training.Scenes
             {
                 Position = new Vector2(298, 65)
             };
-            var p2PaddleImageComponent = new ImageComponent(paddleTexture);
+            var p2PaddleTextureComponent = new TextureComponent(paddleTexture);
 
             _componentRepository.SetComponent(p2PaddleEntity.Id, p2PaddleTransformComponent);
-            _componentRepository.SetComponent(p2PaddleEntity.Id, p2PaddleImageComponent);
+            _componentRepository.SetComponent(p2PaddleEntity.Id, p2PaddleTextureComponent);
 
             _renderSystem.Register(p2PaddleEntity.Id);
             #endregion
@@ -249,9 +250,9 @@ namespace MonoGame.Training.Scenes
                     new Vector2(0, 0),
                     new Vector2(370, 0)
                 },
-                Edges = new List<Tuple<int, int>>()
+                Edges = new List<Edge>()
                 {
-                    new Tuple<int, int>(0, 1)
+                    new Edge(0, 1)
                 }
             };
             var topWallTransformComponent = new TransformComponent()
@@ -302,9 +303,9 @@ namespace MonoGame.Training.Scenes
                     new Vector2(0, 0),
                     new Vector2(370, 0)
                 },
-                Edges = new List<Tuple<int, int>>()
+                Edges = new List<Edge>()
                 {
-                    new Tuple<int, int>(0, 1)
+                    new Edge(0, 1)
                 }
             };
             var bottomWallTransformComponent = new TransformComponent()
@@ -355,9 +356,9 @@ namespace MonoGame.Training.Scenes
                     new Vector2(0, 0),
                     new Vector2(0, 290)
                 },
-                Edges = new List<Tuple<int, int>>()
+                Edges = new List<Edge>()
                 {
-                    new Tuple<int, int>(0, 1)
+                    new Edge(0, 1)
                 }
             };
             var leftWallTransformComponent = new TransformComponent()
@@ -385,7 +386,7 @@ namespace MonoGame.Training.Scenes
                     {
                         Position = new Vector2(296, 34) - new Vector2(newScoreTexture.Width, 0)
                     };
-                    var p2ScoreImageComponent = new ImageComponent(newScoreTexture);
+                    var p2ScoreImageComponent = new TextureComponent(newScoreTexture);
 
                     _componentRepository.SetComponent(p2ScoreEntity.Id, p2ScoreImageComponent);
                     _componentRepository.SetComponent(p2ScoreEntity.Id, p2ScoreTransformComponent);
@@ -420,9 +421,9 @@ namespace MonoGame.Training.Scenes
                     new Vector2(0, 0),
                     new Vector2(0, 290)
                 },
-                Edges = new List<Tuple<int, int>>()
+                Edges = new List<Edge>()
                 {
-                    new Tuple<int, int>(0, 1)
+                    new Edge(0, 1)
                 }
             };
             var rightWallTransformComponent = new TransformComponent()
@@ -450,7 +451,7 @@ namespace MonoGame.Training.Scenes
                     {
                         Position = new Vector2(114, 34) - new Vector2(newScoreTexture.Width, 0)
                     };
-                    var p1ScoreImageComponent = new ImageComponent(newScoreTexture);
+                    var p1ScoreImageComponent = new TextureComponent(newScoreTexture);
 
                     _componentRepository.SetComponent(p1ScoreEntity.Id, p1ScoreImageComponent);
                     _componentRepository.SetComponent(p1ScoreEntity.Id, p1ScoreTransformComponent);
@@ -496,13 +497,13 @@ namespace MonoGame.Training.Scenes
             {
                 Velocity = RandomBallVelocity()
             };
-            var ballImageComponent = new ImageComponent(ballTexture);
+            var ballTextureComponent = new TextureComponent(ballTexture);
 
             _componentRepository.SetComponent(ballEntity.Id, ballRigidBodyComponent);
             _componentRepository.SetComponent(ballEntity.Id, ballMeshComponent);
             _componentRepository.SetComponent(ballEntity.Id, ballTransformComponent);
             _componentRepository.SetComponent(ballEntity.Id, ballMotionComponent);
-            _componentRepository.SetComponent(ballEntity.Id, ballImageComponent);
+            _componentRepository.SetComponent(ballEntity.Id, ballTextureComponent);
             _componentRepository.SetComponent(ballEntity.Id, new ImpulseComponent()
             {
                 Impulses = new List<Impulse>()
@@ -544,30 +545,25 @@ namespace MonoGame.Training.Scenes
             _inputSystem.Update(gameTime);
         }
 
-        public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
+        public override void Draw(GameTime gameTime)
         {
-            var graphicsDevice = _graphicsHelper.GetGraphicsDeviceManager().GraphicsDevice;
-
-
             // Draw call
-            graphicsDevice.SetRenderTarget(_nativeRenderTarget);
-            graphicsDevice.Clear(Color.Black);
+            GraphicsDevice.SetRenderTarget(_nativeRenderTarget);
+            GraphicsDevice.Clear(Color.Black);
             // now render your game like you normally would, but if you change the render target somewhere,
             // make sure you set it back to this one and not the backbuffer
-            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, samplerState: SamplerState.PointWrap);
-            _renderSystem.Draw(spriteBatch);
-            _textRenderSystem.Draw(spriteBatch);
-            spriteBatch.End();
+            SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, samplerState: SamplerState.PointWrap);
+            _renderSystem.Draw(gameTime);
+            _textRenderSystem.Draw(SpriteBatch);
+            SpriteBatch.End();
 
             // after drawing the game at native resolution we can render _nativeRenderTarget to the backbuffer!
             // First set the GraphicsDevice target back to the backbuffer
-            graphicsDevice.SetRenderTarget(null);
+            GraphicsDevice.SetRenderTarget(null);
             // RenderTarget2D inherits from Texture2D so we can render it just like a texture
-            spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-            spriteBatch.Draw(_nativeRenderTarget, _actualScreenRectangle, Color.White);
-            spriteBatch.End();
-
-            
+            SpriteBatch.Begin(samplerState: SamplerState.PointClamp);
+            SpriteBatch.Draw(_nativeRenderTarget, _actualScreenRectangle, Color.White);
+            SpriteBatch.End();    
         }
 
         private Vector2 RandomBallVelocity()
