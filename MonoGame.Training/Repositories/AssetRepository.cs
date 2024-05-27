@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Media;
 using System.Collections.Generic;
 
 namespace MonoGame.Training.Repositories
@@ -8,12 +9,15 @@ namespace MonoGame.Training.Repositories
         private readonly Dictionary<string, Texture2D> _texturesById;
         private readonly Dictionary<string, SpriteFont> _fontsById;
         private readonly Dictionary<string, Effect> _effectsById;
+        private readonly Dictionary<string, Song> _songsById;
+
 
         public AssetRepository()
         {
             _texturesById = new Dictionary<string, Texture2D>();
             _fontsById = new Dictionary<string, SpriteFont>();
             _effectsById = new Dictionary<string, Effect>();
+            _songsById = new Dictionary<string, Song>();
         }
 
         public SpriteFont GetFont(string fontId)
@@ -31,6 +35,11 @@ namespace MonoGame.Training.Repositories
             return _effectsById[effectId];
         }
 
+        public Song GetSong(string songId)
+        {
+            return _songsById[songId];
+        }
+
         public void SetFont(string fontId, SpriteFont font)
         {
             _fontsById.Add(fontId, font);
@@ -44,6 +53,11 @@ namespace MonoGame.Training.Repositories
         public void SetEffect(string effectId, Effect effect)
         {
             _effectsById.Add(effectId, effect);
+        }
+
+        public void SetSong(string songId, Song song)
+        {
+            _songsById.Add(songId, song);
         }
     }
 }

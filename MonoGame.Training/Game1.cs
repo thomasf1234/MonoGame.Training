@@ -15,6 +15,7 @@ using MonoGame.Training.Helpers;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Diagnostics;
+using Microsoft.Xna.Framework.Media;
 
 // https://konradzaba.github.io/blog/tech/Monogame-and-XNA-performance-cheat-sheet-Update-function/ (Optimisations)
 // https://www.youtube.com/watch?v=9Wcy4wffuJs (Static background + Camera)
@@ -32,6 +33,7 @@ namespace MonoGame.Training
         private SpriteBatch _spriteBatch;
         private IAssetRepository _assetRepository;
         private IComponentRepository _componentRepository;
+        private IEntityRepository _entityRepository;
         private InputHelper _inputHelper;
         private GraphicsHelper _graphicsHelper;
 
@@ -76,6 +78,7 @@ namespace MonoGame.Training
             // TODO: Add your initialization logic here
             _assetRepository = new AssetRepository();
             _componentRepository = new ComponentRepository();
+            _entityRepository = new EntityRepository();
             _inputHelper = new InputHelper();
             _graphicsHelper = new GraphicsHelper(_graphics);
             _scenesByName = new Dictionary<string, Scene>();
@@ -88,6 +91,9 @@ namespace MonoGame.Training
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
             // TODO: use this.Content to load your game content here
+            var chaoGardenSong = this.Content.Load<Song>("Placeholder_TinyChaoGarden_Theme");
+            _assetRepository.SetSong("Placeholder_TinyChaoGarden_Theme", chaoGardenSong);
+
             var chaoGardenTexture = this.Content.Load<Texture2D>("ChaoGarden");
             var chaoSpritesTexture = this.Content.Load<Texture2D>("ChaoSprites");
 
@@ -140,7 +146,7 @@ namespace MonoGame.Training
             var titleSceneName = "Title";
             if (!_scenesByName.TryGetValue(titleSceneName, out var titleScene))
             {
-                titleScene = new TitleScene(_spriteBatch, _graphics.GraphicsDevice, _assetRepository, _componentRepository, _inputHelper)
+                titleScene = new TitleScene(_spriteBatch, _graphics.GraphicsDevice, _assetRepository, _entityRepository, _componentRepository, _inputHelper)
                 {
                     Name = titleSceneName
                 };
@@ -154,7 +160,7 @@ namespace MonoGame.Training
             var chaoGardenSceneName = "ChaoGarden";
             if (!_scenesByName.TryGetValue(chaoGardenSceneName, out var chaoGardenScene))
             {
-                chaoGardenScene = new ChaoGardenScene(_spriteBatch, _graphics.GraphicsDevice, _assetRepository, _componentRepository, _inputHelper, _graphicsHelper)
+                chaoGardenScene = new ChaoGardenScene(_spriteBatch, _graphics.GraphicsDevice, _assetRepository, _entityRepository, _componentRepository, _inputHelper, _graphicsHelper)
                 {
                     Name = chaoGardenSceneName
                 };
@@ -164,7 +170,7 @@ namespace MonoGame.Training
             var pongSceneName = "Pong";
             if (!_scenesByName.TryGetValue(pongSceneName, out var pongScene))
             {
-                pongScene = new PongScene(_spriteBatch, _graphics.GraphicsDevice, _assetRepository, _componentRepository, _inputHelper, _graphicsHelper)
+                pongScene = new PongScene(_spriteBatch, _graphics.GraphicsDevice, _assetRepository, _entityRepository, _componentRepository, _inputHelper, _graphicsHelper)
                 {
                     Name = pongSceneName
                 };
@@ -174,7 +180,7 @@ namespace MonoGame.Training
             var collisionSceneName = "Collision";
             if (!_scenesByName.TryGetValue(collisionSceneName, out var collisionScene))
             {
-                collisionScene = new CollisionScene(_spriteBatch, _graphics.GraphicsDevice, _assetRepository, _componentRepository, _inputHelper, _graphicsHelper)
+                collisionScene = new CollisionScene(_spriteBatch, _graphics.GraphicsDevice, _assetRepository, _entityRepository, _componentRepository, _inputHelper, _graphicsHelper)
                 {
                     Name = collisionSceneName
                 };

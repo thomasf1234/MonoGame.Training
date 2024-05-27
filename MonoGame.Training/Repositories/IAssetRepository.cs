@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Media;
 
 namespace MonoGame.Training.Repositories
 {
@@ -13,5 +14,8 @@ namespace MonoGame.Training.Repositories
 
         public Effect GetEffect(string effectId);
         public void SetEffect(string effectId, Effect effect);
+
+        public Song GetSong(string songId);
+        public void SetSong(string songId, Song song);
     }
 }

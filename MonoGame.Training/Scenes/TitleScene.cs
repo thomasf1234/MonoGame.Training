@@ -4,7 +4,6 @@ using MonoGame.Training.Entities;
 using MonoGame.Training.Repositories;
 using MonoGame.Training.Systems;
 using System.Collections.Generic;
-using System;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGame.Training.Helpers;
 
@@ -15,13 +14,15 @@ namespace MonoGame.Training.Scenes
     {
         private IAssetRepository _assetRepository;
         private InputHelper _inputHelper;
+        private IEntityRepository _entityRepository;
         private IComponentRepository _componentRepository;
         private MenuSystem _menuSystem;
         private TextRenderSystem _textRenderSystem;
 
-        public TitleScene(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, IAssetRepository assetRepository, IComponentRepository componentRepository, InputHelper inputHelper) : base(spriteBatch, graphicsDevice)
+        public TitleScene(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, IAssetRepository assetRepository, IEntityRepository entityRepository, IComponentRepository componentRepository, InputHelper inputHelper) : base(spriteBatch, graphicsDevice)
         {
             _assetRepository = assetRepository;
+            _entityRepository = entityRepository;
             _componentRepository = componentRepository;
             _inputHelper = inputHelper;
         }
@@ -207,7 +208,7 @@ namespace MonoGame.Training.Scenes
 
         private Entity CreateMenuItemEntity(string text, int index)
         {
-            var menuItemEntity = new Entity() { Id = Guid.NewGuid() };
+            var menuItemEntity = _entityRepository.Create();
 
             var textComponent = new TextComponent()
             {

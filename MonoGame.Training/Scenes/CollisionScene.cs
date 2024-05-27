@@ -23,6 +23,8 @@ namespace MonoGame.Training.Scenes
         private IAssetRepository _assetRepository;
         private InputHelper _inputHelper;
         private IComponentRepository _componentRepository;
+        private IEntityRepository _entityRepository;
+
 
         private PrimitiveRenderSystem _renderSystem;
         private InputSystem _inputSystem;
@@ -37,9 +39,10 @@ namespace MonoGame.Training.Scenes
         private float _scale;
         private Polygon _polygon;
 
-        public CollisionScene(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, IAssetRepository assetRepository, IComponentRepository componentRepository, InputHelper inputHelper, GraphicsHelper graphicsHelper) : base(spriteBatch, graphicsDevice)
+        public CollisionScene(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, IAssetRepository assetRepository, IEntityRepository entityRepository, IComponentRepository componentRepository, InputHelper inputHelper, GraphicsHelper graphicsHelper) : base(spriteBatch, graphicsDevice)
         {
             _assetRepository = assetRepository;
+            _entityRepository = entityRepository;
             _componentRepository = componentRepository;
             _inputHelper = inputHelper;
             _graphicsHelper = graphicsHelper;
@@ -66,7 +69,7 @@ namespace MonoGame.Training.Scenes
 
             _polygon = polygonFactory.Create(vertices);
 
-            var polygon1Entity = new Entity() { Id = Guid.NewGuid() };
+            var polygon1Entity = _entityRepository.Create();
             var meshComponent = new MeshComponent()
             {
                 Vertices = _polygon.Vertices,

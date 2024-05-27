@@ -1,10 +1,11 @@
-
-using System;
-
 namespace MonoGame.Training.Entities
 {
     public class Entity
     {
-        public Guid Id { get; set; }       
+        public int Id { get; set; }
+        public Entity(int id)
+        {
+            Id = id;
+        }
     }
 }

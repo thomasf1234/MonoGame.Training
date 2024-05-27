@@ -85,7 +85,7 @@ namespace MonoGame.Training.StateMachines
         private async Task OnWalkingAsync(Direction direction)
         {
             _chaoEntity.TransformComponent.Rotation = (int)direction;
-            var speed = 75f;
+            var speed = 25f;
 
             switch (direction)
             {

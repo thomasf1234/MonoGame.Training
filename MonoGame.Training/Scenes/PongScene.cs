@@ -18,6 +18,7 @@ namespace MonoGame.Training.Scenes
         private RenderTarget2D _nativeRenderTarget;
         private IAssetRepository _assetRepository;
         private InputHelper _inputHelper;
+        private IEntityRepository _entityRepository;
         private IComponentRepository _componentRepository;
 
         private SpriteRenderSystem _renderSystem;
@@ -36,9 +37,10 @@ namespace MonoGame.Training.Scenes
         private int p1Score;
         private int p2Score;
 
-        public PongScene(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, IAssetRepository assetRepository, IComponentRepository componentRepository, InputHelper inputHelper, GraphicsHelper graphicsHelper) : base(spriteBatch, graphicsDevice)
+        public PongScene(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, IAssetRepository assetRepository, IEntityRepository entityRepository, IComponentRepository componentRepository, InputHelper inputHelper, GraphicsHelper graphicsHelper) : base(spriteBatch, graphicsDevice)
         {
             _assetRepository = assetRepository;
+            _entityRepository = entityRepository;
             _componentRepository = componentRepository;
             _inputHelper = inputHelper;
             _graphicsHelper = graphicsHelper;
@@ -69,7 +71,7 @@ namespace MonoGame.Training.Scenes
             #endregion
 
             #region Initialise Metrics Summary
-            var metricsEntity = new Entity() { Id = Guid.NewGuid() };
+            var metricsEntity = _entityRepository.Create();
 
             var metricsTextComponent = new TextComponent()
             {
@@ -87,15 +89,12 @@ namespace MonoGame.Training.Scenes
             _componentRepository.SetComponent(metricsEntity.Id, metricsTextComponent);
             _componentRepository.SetComponent(metricsEntity.Id, metricsTransformComponent);
 
-            _metricSystem.Register(new List<Guid>() { metricsEntity.Id });
-            _textRenderSystem.Register(new List<Guid>() { metricsEntity.Id });
+            _metricSystem.Register(new List<int>() { metricsEntity.Id });
+            _textRenderSystem.Register(new List<int>() { metricsEntity.Id });
             #endregion
 
             #region Initialise Net
-            var netEntity = new Entity() 
-            { 
-                Id = Guid.NewGuid() 
-            };
+            var netEntity = _entityRepository.Create();
             var netTransformComponent = new TransformComponent()
             {
                 Position = new Vector2(174, 17)
@@ -111,10 +110,7 @@ namespace MonoGame.Training.Scenes
 
 
             #region Initialise P1 Score
-            var p1ScoreEntity = new Entity()
-            {
-                Id = Guid.NewGuid()
-            };
+            var p1ScoreEntity = _entityRepository.Create();
             var p1ScoreTransformComponent = new TransformComponent()
             {
                 Position = new Vector2(114, 34) - new Vector2(_assetRepository.GetTexture("Pong/Score_0").Width, 0)
@@ -128,10 +124,7 @@ namespace MonoGame.Training.Scenes
             #endregion
 
             #region Initialise P2 Score
-            var p2ScoreEntity = new Entity()
-            {
-                Id = Guid.NewGuid()
-            };
+            var p2ScoreEntity = _entityRepository.Create();
             var p2ScoreTransformComponent = new TransformComponent()
             {
                 Position = new Vector2(296, 34) - new Vector2(_assetRepository.GetTexture("Pong/Score_0").Width, 0)
@@ -145,10 +138,7 @@ namespace MonoGame.Training.Scenes
             #endregion
 
             #region Initialise P1 Paddle
-            var p1PaddleEntity = new Entity()
-            {
-                Id = Guid.NewGuid()
-            };
+            var p1PaddleEntity = _entityRepository.Create();
             var p1PaddleRigidBodyComponent = new RigidBodyComponent()
             {
                 Mass = float.PositiveInfinity
@@ -217,10 +207,7 @@ namespace MonoGame.Training.Scenes
             #endregion
 
             #region Initialise P2 Paddle
-            var p2PaddleEntity = new Entity()
-            {
-                Id = Guid.NewGuid()
-            };
+            var p2PaddleEntity = _entityRepository.Create();
             var p2PaddleTransformComponent = new TransformComponent()
             {
                 Position = new Vector2(298, 65)
@@ -234,10 +221,7 @@ namespace MonoGame.Training.Scenes
             #endregion
 
             #region Initialise Top Wall
-            var topWallEntity = new Entity()
-            {
-                Id = Guid.NewGuid()
-            };
+            var topWallEntity = _entityRepository.Create();
 
             var topWallRigidBodyComponent = new RigidBodyComponent()
             {
@@ -287,11 +271,7 @@ namespace MonoGame.Training.Scenes
 
 
             #region Initialise Bottom Wall
-            var bottomWallEntity = new Entity()
-            {
-                Id = Guid.NewGuid()
-            };
-
+            var bottomWallEntity = _entityRepository.Create();
             var bottomWallRigidBodyComponent = new RigidBodyComponent()
             {
                 Mass = float.PositiveInfinity
@@ -340,10 +320,7 @@ namespace MonoGame.Training.Scenes
 
 
             #region Initialise Left Wall
-            var leftWallEntity = new Entity()
-            {
-                Id = Guid.NewGuid()
-            };
+            var leftWallEntity = _entityRepository.Create();
 
             var leftWallRigidBodyComponent = new RigidBodyComponent()
             {
@@ -405,10 +382,7 @@ namespace MonoGame.Training.Scenes
             #endregion
 
             #region Initialise Right Wall
-            var rightWallEntity = new Entity()
-            {
-                Id = Guid.NewGuid()
-            };
+            var rightWallEntity = _entityRepository.Create();
 
             var rightWallRigidBodyComponent = new RigidBodyComponent()
             {
@@ -471,10 +445,7 @@ namespace MonoGame.Training.Scenes
             #endregion
 
             #region Initialise Ball
-            var ballEntity = new Entity()
-            {
-                Id = Guid.NewGuid()
-            };
+            var ballEntity = _entityRepository.Create();
             // Model the ball as a point mass
             var ballRigidBodyComponent = new RigidBodyComponent()
             {

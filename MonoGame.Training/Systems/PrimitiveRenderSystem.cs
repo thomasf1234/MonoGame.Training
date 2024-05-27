@@ -39,7 +39,7 @@ namespace MonoGame.Training.Systems
 
         // TODO update vertex buffer once per frame
         // TODO : Single vertex buffer and index buffer for all meshes, updated OnRegister and OnDeregister
-        protected override void OnRegister(Guid entityId)
+        protected override void OnRegister(int entityId)
         {
             var meshComponent = _componentRepository.GetComponent<MeshComponent>(entityId);
 

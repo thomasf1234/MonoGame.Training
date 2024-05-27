@@ -60,7 +60,7 @@ namespace MonoGame.Training.Systems
             }
         }
 
-        protected override void OnDeregister(Guid entityId)
+        protected override void OnDeregister(int entityId)
         {
             base.OnDeregister(entityId);
 

@@ -11,12 +11,16 @@ using System;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoGame.Training.Helpers;
+using System.Diagnostics;
+using Microsoft.Xna.Framework.Media;
 
 namespace MonoGame.Training.Scenes
 {
+    //https://gamefromscratch.com/monogame-tutorial-audio/
     public class ChaoGardenScene : Scene
     {
         private IAssetRepository _assetRepository;
+        private IEntityRepository _entityRepository;
         private IComponentRepository _componentRepository;
         private InputHelper _inputHelper;
         private GraphicsHelper _graphicsHelper;
@@ -25,14 +29,16 @@ namespace MonoGame.Training.Scenes
         private AnimationSystem _animationSystem;
         private SpriteRenderSystem _renderSystem;
         private TextRenderSystem _textRenderSystem;
-
         private IChaoStateMachine _chaoStateMachine;
+        private MusicSystem _musicSystem;
+        private SoundComponent _tinyChaoGardenSoundComponent;
 
         private bool _paused;
 
-        public ChaoGardenScene(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, IAssetRepository assetRepository, IComponentRepository componentRepository, InputHelper inputHelper, GraphicsHelper graphicsHelper) : base(spriteBatch, graphicsDevice)
+        public ChaoGardenScene(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, IAssetRepository assetRepository, IEntityRepository entityRepository, IComponentRepository componentRepository, InputHelper inputHelper, GraphicsHelper graphicsHelper) : base(spriteBatch, graphicsDevice)
         {
             _assetRepository = assetRepository;
+            _entityRepository = entityRepository;
             _componentRepository = componentRepository;
             _inputHelper = inputHelper;
             _graphicsHelper = graphicsHelper;
@@ -41,11 +47,24 @@ namespace MonoGame.Training.Scenes
 
         protected override void OnLoading()
         {
+            var backgroundMusicEntity = _entityRepository.Create();
+            var tinyChaoGardenSong = _assetRepository.GetSong("Placeholder_TinyChaoGarden_Theme");
+            _tinyChaoGardenSoundComponent = new SoundComponent()
+            {
+                Song = tinyChaoGardenSong,
+                IsLooping = true,
+                IsPaused = false
+            };
+            _componentRepository.SetComponent<SoundComponent>(backgroundMusicEntity.Id, _tinyChaoGardenSoundComponent);
+            _musicSystem = new MusicSystem(_componentRepository);
+            _musicSystem.Register(backgroundMusicEntity.Id);
+
+
             var chaoGardenTexture = _assetRepository.GetTexture("ChaoGarden");
             var chaoSpritesTexture = _assetRepository.GetTexture("ChaoSprites");
 
             // Initialise Entities
-            var metricsEntity = new Entity() { Id = Guid.NewGuid() };
+            var metricsEntity = _entityRepository.Create();
 
             var metricsTextComponent = new TextComponent()
             {
@@ -82,9 +101,9 @@ namespace MonoGame.Training.Scenes
                         { "WalkLeft", new Animation(new Vector2(0, 24*6), 21, 24, 4, 0.2f, true) },
                         { "WalkUp", new Animation(new Vector2(0, 24*7), 21, 24, 4, 0.2f, true) }
                     };
-            var chaoEntity = new ChaoEntity()
+
+            var chaoEntity = new ChaoEntity(_entityRepository.Create().Id)
             {
-                Id = Guid.NewGuid(),
                 TransformComponent = new TransformComponent()
                 {
                     Position = new Vector2(50, 100),
@@ -111,9 +130,8 @@ namespace MonoGame.Training.Scenes
             chaoStateMachine.Assign(chaoEntity);
             _chaoStateMachine = chaoStateMachine;
 
-            var backgroundEntity = new BackgroundEntity()
+            var backgroundEntity = new BackgroundEntity(_entityRepository.Create().Id)
             {
-                Id = Guid.NewGuid(),
                 TransformComponent = new TransformComponent()
                 {
                     Position = new Vector2(0, 0)
@@ -136,19 +154,26 @@ namespace MonoGame.Training.Scenes
 
             // Intialise systems
             _metricSystem = new MetricSystem(_componentRepository);
-            _metricSystem.Register(new List<Guid>() { metricsEntity.Id });
+            _metricSystem.Register(new List<int>() { metricsEntity.Id });
 
             _motionSystem = new MotionSystem(_componentRepository);
-            _motionSystem.Register(new List<Guid>() { chaoEntity.Id });
+            _motionSystem.Register(new List<int>() { chaoEntity.Id });
 
             _animationSystem = new AnimationSystem(_componentRepository);
-            _animationSystem.Register(new List<Guid>() { chaoEntity.Id });
+            _animationSystem.Register(new List<int>() { chaoEntity.Id });
 
             _renderSystem = new SpriteRenderSystem(_componentRepository, SpriteBatch);
-            _renderSystem.Register(new List<Guid>() { backgroundEntity.Id, chaoEntity.Id });
+            _renderSystem.Register(new List<int>() { backgroundEntity.Id, chaoEntity.Id });
 
             _textRenderSystem = new TextRenderSystem(_componentRepository, _assetRepository);
-            _textRenderSystem.Register(new List<Guid>() { metricsEntity.Id });
+            _textRenderSystem.Register(new List<int>() { metricsEntity.Id });
+
+
+        }
+
+        protected override void OnActive()
+        {
+
         }
 
         public override void Update(GameTime gameTime)
@@ -159,7 +184,10 @@ namespace MonoGame.Training.Scenes
             if (_inputHelper.IsKeyPressed(Keys.P))
             {
                 _paused = !_paused;
+                _tinyChaoGardenSoundComponent.IsPaused = _paused;
             }
+
+            _musicSystem.Update(gameTime);
 
             if (_paused)
             {
