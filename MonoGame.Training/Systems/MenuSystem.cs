@@ -2,7 +2,6 @@
 using Microsoft.Xna.Framework;
 using MonoGame.Training.Repositories;
 using MonoGame.Training.Components;
-using MonoGame.Training.Helpers;
 using Microsoft.Xna.Framework.Input;
 using System;
 
@@ -11,16 +10,16 @@ namespace MonoGame.Training.Systems
     public class MenuSystem : System
     {
         private int _currentSelectionIndex;
-        private readonly InputHelper _inputHelper;
-        public MenuSystem(IComponentRepository componentRepository, InputHelper inputHelper) : base(componentRepository)
+        private readonly IInputRepository _inputRepository;
+        public MenuSystem(IComponentRepository componentRepository, IInputRepository inputRepository) : base(componentRepository)
         {
             _currentSelectionIndex = 0;
-            _inputHelper = inputHelper;
+            _inputRepository = inputRepository;
         }
 
         public void Update(GameTime gameTime)
         {
-            if (_inputHelper.AnyKeyPressed(new Keys[] { Keys.S, Keys.Down }))
+            if (_inputRepository.AnyKeyPressed(new Keys[] { Keys.S, Keys.Down }))
             {
                 var newIndex = _currentSelectionIndex += 1;
                 if (newIndex == EntityIds.Count)
@@ -31,7 +30,7 @@ namespace MonoGame.Training.Systems
                 _currentSelectionIndex = newIndex;
             }
 
-            if (_inputHelper.AnyKeyPressed(new Keys[] { Keys.W, Keys.Up }))
+            if (_inputRepository.AnyKeyPressed(new Keys[] { Keys.W, Keys.Up }))
             {
                 var newIndex = _currentSelectionIndex -= 1;
                 if (newIndex == -1)
@@ -42,7 +41,7 @@ namespace MonoGame.Training.Systems
                 _currentSelectionIndex = newIndex;
             }
 
-            if (_inputHelper.AnyKeyPressed(new Keys[] { Keys.Space, Keys.Enter }))
+            if (_inputRepository.AnyKeyPressed(new Keys[] { Keys.Space, Keys.Enter }))
             {
                 var entityId = EntityIds[_currentSelectionIndex];
 

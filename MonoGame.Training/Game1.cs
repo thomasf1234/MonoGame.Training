@@ -11,11 +11,11 @@ using MonoGame.Training.StateMachines;
 using MonoGame.Training.Constants;
 using MonoGame.Training.Models;
 using MonoGame.Training.Scenes;
-using MonoGame.Training.Helpers;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Diagnostics;
 using Microsoft.Xna.Framework.Media;
+using MonoGame.Training.DependencyInjection;
 
 // https://konradzaba.github.io/blog/tech/Monogame-and-XNA-performance-cheat-sheet-Update-function/ (Optimisations)
 // https://www.youtube.com/watch?v=9Wcy4wffuJs (Static background + Camera)
@@ -29,13 +29,15 @@ namespace MonoGame.Training
 {
     public class Game1 : Game
     {
+        public bool RequireRestart { get; set; }
         private GraphicsDeviceManager _graphics;
-        private SpriteBatch _spriteBatch;
-        private IAssetRepository _assetRepository;
+        public SpriteBatch SpriteBatch;
+        private IConfigurationRepository _configurationRepository;
+        private IResourceRepository _resourceRepository;
         private IComponentRepository _componentRepository;
         private IEntityRepository _entityRepository;
-        private InputHelper _inputHelper;
-        private GraphicsHelper _graphicsHelper;
+        private IInputRepository _inputRepository;
+        private ServiceContainer _serviceContainer;
 
         private Dictionary<string, Scene> _scenesByName;
         private Scene _activeScene;
@@ -46,25 +48,69 @@ namespace MonoGame.Training
 
         private int _frame;
 
+
+        private Viewport _viewport;
+
         public Game1()
         {
+            #region Set non configurable settings
+            RequireRestart = false;
+
+            Window.Title = "Demo";
             _graphics = new GraphicsDeviceManager(this);
-            _graphics.IsFullScreen = false;
-            _graphics.PreferredBackBufferHeight = 160 * 5;
-            _graphics.PreferredBackBufferWidth = 176 * 5;
+            Content.RootDirectory = "Content";
+            IsMouseVisible = true;
+            #endregion
+
+            #region Load and apply configuration
+            _configurationRepository = new ConfigurationRepository();
+            var configuration = _configurationRepository.Load();
+
+            _graphics.IsFullScreen = configuration.Fullscreen;
+
+            int screenWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
+            int screenHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
+            _graphics.PreferredBackBufferHeight = screenHeight; //= 160 * 5;
+            //_graphics.PreferredBackBufferWidth = 176 * 5;
+            _graphics.PreferredBackBufferWidth = screenWidth; //= 176 * 8;
+
             // https://community.monogame.net/t/the-use-of-a-fixed-time-step/9143
             /*_graphics.SynchronizeWithVerticalRetrace = false; //Vsync
             this.IsFixedTimeStep = true; // true;
             int targetFPS = 60;
             this.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0f / targetFPS);*/
 
-            _graphics.SynchronizeWithVerticalRetrace = false; // true; //Vsync
-            this.IsFixedTimeStep = false; // false; // false; // true; // default;
-            int targetFPS = 60; // 120;
-            this.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0f / targetFPS);
+            _graphics.SynchronizeWithVerticalRetrace = true;
+            this.IsFixedTimeStep = true;
+            this.TargetElapsedTime = this.TargetElapsedTime = TimeSpan.FromTicks((long)(TimeSpan.TicksPerSecond / configuration.RefreshRate));
+            #endregion
 
-            Content.RootDirectory = "Content";
-            IsMouseVisible = false;
+
+            _resourceRepository = new ResourceRepository();
+            _componentRepository = new ComponentRepository();
+            _entityRepository = new EntityRepository();
+            _inputRepository = new InputRepository();
+            _scenesByName = new Dictionary<string, Scene>();
+
+            var window = Window;
+            var s = Services.GetService<IGraphicsDeviceService>();
+
+            _serviceContainer = new ServiceContainer();
+            _serviceContainer.Set(_configurationRepository);
+            _serviceContainer.Set(_resourceRepository);
+            _serviceContainer.Set(_componentRepository);
+            _serviceContainer.Set(_entityRepository);
+             
+            _serviceContainer.Set(_inputRepository);
+            _serviceContainer.Set(this);
+
+          
+
+            Window.AllowUserResizing = true;
+            // Hook into the ClientSizeChanged event to handle window resizing
+            Window.ClientSizeChanged += OnClientSizeChanged;
+
+
             _loadingStopwatch = new Stopwatch();
             _frame = 0;
             _updateStopWatch = new Stopwatch();
@@ -75,31 +121,29 @@ namespace MonoGame.Training
 
         protected override void Initialize()
         {
-            // TODO: Add your initialization logic here
-            _assetRepository = new AssetRepository();
-            _componentRepository = new ComponentRepository();
-            _entityRepository = new EntityRepository();
-            _inputHelper = new InputHelper();
-            _graphicsHelper = new GraphicsHelper(_graphics);
-            _scenesByName = new Dictionary<string, Scene>();
+            /*
+             * The Initialize method is called after the constructor but before the main game loop (Update/Draw). 
+             * This is where you can query any required services and load any non-graphic related content.
+             */
 
-            base.Initialize();
+            // Supposedly LoadContent is called within the Initialize method so moving base.Initialize() to the end of this method
+            base.Initialize();            
         }
 
         protected override void LoadContent()
         {
-            _spriteBatch = new SpriteBatch(GraphicsDevice);
+            SpriteBatch = new SpriteBatch(GraphicsDevice);
 
             // TODO: use this.Content to load your game content here
-            var chaoGardenSong = this.Content.Load<Song>("Placeholder_TinyChaoGarden_Theme");
-            _assetRepository.SetSong("Placeholder_TinyChaoGarden_Theme", chaoGardenSong);
+            var chaoGardenSong = this.Content.Load<Song>("TinyChaoGarden_Theme");
+            _resourceRepository.SetSong("TinyChaoGarden_Theme", chaoGardenSong);
 
             var chaoGardenTexture = this.Content.Load<Texture2D>("ChaoGarden");
             var chaoSpritesTexture = this.Content.Load<Texture2D>("ChaoSprites");
 
-            // Add assets to AssetRepository for use in Scenes
-            _assetRepository.SetTexture("ChaoGarden", chaoGardenTexture);
-            _assetRepository.SetTexture("ChaoSprites", chaoSpritesTexture);
+            // Add assets to ResourceRepository for use in Scenes
+            _resourceRepository.SetTexture("ChaoGarden", chaoGardenTexture);
+            _resourceRepository.SetTexture("ChaoSprites", chaoSpritesTexture);
 
             // Load Pong sprites
             var pongSpriteNames = new List<string>()
@@ -121,32 +165,33 @@ namespace MonoGame.Training
             foreach (var spriteName in pongSpriteNames)
             {
                 var texture = this.Content.Load<Texture2D>(spriteName);
-                _assetRepository.SetTexture(spriteName, texture);
+                _resourceRepository.SetTexture(spriteName, texture);
             }
 
 
             var arialFont = this.Content.Load<SpriteFont>("Arial");
-            _assetRepository.SetFont("Arial", arialFont);
+            _resourceRepository.SetFont("Arial", arialFont);
 
             var grayScaleEffect = this.Content.Load<Effect>("GrayScale");
-            _assetRepository.SetEffect("GrayScale", grayScaleEffect);
+            _resourceRepository.SetEffect("GrayScale", grayScaleEffect);
 
             var alphaEffect = this.Content.Load<Effect>("Alpha");
-            _assetRepository.SetEffect("Alpha", alphaEffect);
+            _resourceRepository.SetEffect("Alpha", alphaEffect);
             // TODO : Add layers to game and draw priority
         }
 
         protected override void Update(GameTime gameTime)
         {
+            // TODO non-scene specfic logic should be applied here such as debug/framerate tracking and input capture + state updates.
             ++_frame;
 
             _updateStopWatch.Restart();
-            _inputHelper.Update(gameTime);
+            _inputRepository.Update(gameTime, Keyboard.GetState(), Mouse.GetState());
 
             var titleSceneName = "Title";
             if (!_scenesByName.TryGetValue(titleSceneName, out var titleScene))
             {
-                titleScene = new TitleScene(_spriteBatch, _graphics.GraphicsDevice, _assetRepository, _entityRepository, _componentRepository, _inputHelper)
+                titleScene = new TitleScene(_serviceContainer)
                 {
                     Name = titleSceneName
                 };
@@ -160,7 +205,7 @@ namespace MonoGame.Training
             var chaoGardenSceneName = "ChaoGarden";
             if (!_scenesByName.TryGetValue(chaoGardenSceneName, out var chaoGardenScene))
             {
-                chaoGardenScene = new ChaoGardenScene(_spriteBatch, _graphics.GraphicsDevice, _assetRepository, _entityRepository, _componentRepository, _inputHelper, _graphicsHelper)
+                chaoGardenScene = new ChaoGardenScene(_serviceContainer)
                 {
                     Name = chaoGardenSceneName
                 };
@@ -170,7 +215,7 @@ namespace MonoGame.Training
             var pongSceneName = "Pong";
             if (!_scenesByName.TryGetValue(pongSceneName, out var pongScene))
             {
-                pongScene = new PongScene(_spriteBatch, _graphics.GraphicsDevice, _assetRepository, _entityRepository, _componentRepository, _inputHelper, _graphicsHelper)
+                pongScene = new PongScene(_serviceContainer)
                 {
                     Name = pongSceneName
                 };
@@ -180,7 +225,7 @@ namespace MonoGame.Training
             var collisionSceneName = "Collision";
             if (!_scenesByName.TryGetValue(collisionSceneName, out var collisionScene))
             {
-                collisionScene = new CollisionScene(_spriteBatch, _graphics.GraphicsDevice, _assetRepository, _entityRepository, _componentRepository, _inputHelper, _graphicsHelper)
+                collisionScene = new CollisionScene(_serviceContainer)
                 {
                     Name = collisionSceneName
                 };
@@ -189,7 +234,8 @@ namespace MonoGame.Training
 
             switch (_activeScene.GetState())
             {
-                case SceneState.Loaded:            
+                case SceneState.Loaded:
+                    AdjustViewport();
                     _activeScene.Enter();
                     _loadingStopwatch.Reset();
                     break;
@@ -222,19 +268,19 @@ namespace MonoGame.Training
                             break;
                         case 3:
                             _activeScene = _scenesByName["Pong"];
-                            _scenesByName["Pong"].CameraSize = new Vector2(370, 290);
+                            //_scenesByName["Pong"].CameraSize = new Vector2(370, 290);
                             var loadPongTask = new Task(() => _scenesByName["Pong"].Load());
                             loadPongTask.Start();
 
-                            _graphics.IsFullScreen = false;
+                            /*_graphics.IsFullScreen = false;
                             _graphics.PreferredBackBufferWidth = (int)(370 * 2);
                             _graphics.PreferredBackBufferHeight = (int)(290 * 2);
-                            _graphics.ApplyChanges();
+                            _graphics.ApplyChanges();*/
 
                             break;
                         case 4:
                             _activeScene = _scenesByName["Collision"];
-                            _scenesByName["Collision"].CameraSize = new Vector2(370, 290);
+                            //_scenesByName["Collision"].CameraSize = new Vector2(370, 290);
                             var loadCollisionTask = new Task(() => _scenesByName["Collision"].Load());
                             loadCollisionTask.Start();
 
@@ -255,7 +301,10 @@ namespace MonoGame.Training
         protected override void Draw(GameTime gameTime)
         {
             _drawStopWatch.Restart();
-            GraphicsDevice.Clear(Color.Black);
+            GraphicsDevice.Clear(Color.CornflowerBlue);
+
+            // Set the viewport
+            GraphicsDevice.Viewport = _viewport;
 
             // TODO: Add your drawing code here
 
@@ -265,7 +314,7 @@ namespace MonoGame.Training
                 // TODO : Move threshold time to config or constants
                 if (_loadingStopwatch.Elapsed.TotalSeconds > 1)
                 {
-                    var font = _assetRepository.GetFont("Arial");
+                    var font = _resourceRepository.GetFont("Arial");
 
                     var loadingText = "Loading...";
                     var bottomCenterPosition = new Vector2(_graphics.GraphicsDevice.Viewport.Bounds.Right / 2, _graphics.GraphicsDevice.Viewport.Bounds.Bottom);
@@ -273,9 +322,9 @@ namespace MonoGame.Training
                     var loadingTextHeight = font.MeasureString(loadingText).Y;
                     var offsetVector = new Vector2(0, -100);
 
-                    _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, samplerState: SamplerState.PointWrap);
-                    _spriteBatch.DrawString(font, loadingText, bottomCenterPosition + new Vector2(-loadingTextWidth / 2, -loadingTextHeight) + offsetVector, Color.White);
-                    _spriteBatch.End();
+                    SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, samplerState: SamplerState.PointWrap);
+                    SpriteBatch.DrawString(font, loadingText, bottomCenterPosition + new Vector2(-loadingTextWidth / 2, -loadingTextHeight) + offsetVector, Color.White);
+                    SpriteBatch.End();
                 }
             }
             else
@@ -295,6 +344,45 @@ namespace MonoGame.Training
             Debug.WriteLine($"Frame {_frame} GC Count: {GC.CollectionCount(0)}, {GC.CollectionCount(1)}, {GC.CollectionCount(2)}");
 
             base.Draw(gameTime);
+        }
+
+        private void OnClientSizeChanged(object sender, EventArgs e)
+        {
+            AdjustViewport();
+        }
+
+        private void AdjustViewport()
+        {
+            var TargetAspectRatio = _activeScene.AspectRatio; //16 / 9f;
+
+            // TODO : Move to constants or config
+            var margin = 150;
+
+            int windowWidth = Window.ClientBounds.Width;
+            int windowHeight = Window.ClientBounds.Height;
+            float windowAspectRatio = (float)windowWidth / windowHeight;
+
+            int viewportWidth, viewportHeight;
+
+            if (windowAspectRatio > TargetAspectRatio)
+            {
+                // Window is too wide, letterbox on the left and right
+                viewportHeight = windowHeight;
+                viewportWidth = (int)(windowHeight * TargetAspectRatio);
+            }
+            else
+            {
+                // Window is too tall, letterbox on the top and bottom
+                viewportWidth = windowWidth;
+                viewportHeight = (int)(windowWidth / TargetAspectRatio);
+            }
+
+            
+            // Adjust for margins
+            int viewportX = (windowWidth - viewportWidth) / 2;
+            int viewportY = (windowHeight - viewportHeight) / 2;
+
+            _viewport = new Viewport(viewportX + margin, viewportY + margin, viewportWidth - (2 * margin), viewportHeight - (2 * margin));
         }
     }
 }

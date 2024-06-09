@@ -4,8 +4,9 @@ namespace MonoGame.Training.Components
 {
     public class SoundComponent : Component
     {
-        public Song Song { get; set; }
+        public string SoundId { get; set; }
         public bool IsLooping { get; set; }
         public bool IsPaused { get; set; }
+        public bool Background { get; set; }
     }
 }

@@ -10,6 +10,7 @@ using System.Linq;
 namespace MonoGame.Training.Systems
 {
     /*
+     * TODO MOVE THIS TO GLOBAL GAME LEVEL ACROSS ALL SCENES AS AN OVERLAY
     Frame Rate
     Draw Call
     Frame Time (ms)

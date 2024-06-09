@@ -3,15 +3,11 @@ using MonoGame.Training.Repositories;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGame.Training.Helpers;
 using MonoGame.Training.Components;
-using MonoGame.Training.Entities;
-using System;
 using MonoGame.Training.Systems;
 using System.Collections.Generic;
-using MonoGame.Training.Models;
-using System.Windows.Forms;
 using MonoGame.Training.Factories;
-using System.Linq;
 using MonoGame.Training.Models.Geometry;
+using MonoGame.Training.DependencyInjection;
 
 // https://badecho.com/index.php/2023/08/02/alpha-spritebatch/
 // http://rbwhitaker.wikidot.com/index-and-vertex-buffers
@@ -20,8 +16,8 @@ namespace MonoGame.Training.Scenes
     public class CollisionScene : Scene
     {
         private RenderTarget2D _nativeRenderTarget;
-        private IAssetRepository _assetRepository;
-        private InputHelper _inputHelper;
+        private IResourceRepository _resourceRepository;
+        private IInputRepository _inputRepository;
         private IComponentRepository _componentRepository;
         private IEntityRepository _entityRepository;
 
@@ -31,21 +27,20 @@ namespace MonoGame.Training.Scenes
         private PhysicsSystem _physicsSystem;
         private CollisionSystem _collisionSystem;
 
-
-        private GraphicsHelper _graphicsHelper;
-
         private Rectangle _actualScreenRectangle;
 
         private float _scale;
         private Polygon _polygon;
 
-        public CollisionScene(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, IAssetRepository assetRepository, IEntityRepository entityRepository, IComponentRepository componentRepository, InputHelper inputHelper, GraphicsHelper graphicsHelper) : base(spriteBatch, graphicsDevice)
+        private Game1 _game;
+
+        public CollisionScene(ServiceContainer serviceContainer) : base()
         {
-            _assetRepository = assetRepository;
-            _entityRepository = entityRepository;
-            _componentRepository = componentRepository;
-            _inputHelper = inputHelper;
-            _graphicsHelper = graphicsHelper;
+            _game = serviceContainer.Get<Game1>();
+            _resourceRepository = serviceContainer.Get<IResourceRepository>();
+            _entityRepository = serviceContainer.Get<IEntityRepository>();
+            _componentRepository = serviceContainer.Get<IComponentRepository>();
+            _inputRepository = serviceContainer.Get<IInputRepository>();
             _scale = 2f;
         }
 
@@ -100,8 +95,8 @@ namespace MonoGame.Training.Scenes
             #endregion
 
             #region Initialise Systems
-            _renderSystem = new PrimitiveRenderSystem(_componentRepository, GraphicsDevice);
-            _inputSystem = new InputSystem(_componentRepository, _inputHelper, _graphicsHelper);
+            _renderSystem = new PrimitiveRenderSystem(_componentRepository, _game.GraphicsDevice);
+            _inputSystem = new InputSystem(_componentRepository, _inputRepository, _game.GraphicsDevice.Viewport);
             #endregion
 
             #region Register Entities
@@ -119,23 +114,23 @@ namespace MonoGame.Training.Scenes
         {
             // Draw call
             //graphicsDevice.SetRenderTarget(_nativeRenderTarget);
-            GraphicsDevice.Clear(Color.Black);
+            _game.GraphicsDevice.Clear(Color.Black);
 
             _renderSystem.Draw(gameTime);
 
             // now render your game like you normally would, but if you change the render target somewhere,
             // make sure you set it back to this one and not the backbuffer
-            SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, samplerState: SamplerState.PointWrap);
+            _game.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, samplerState: SamplerState.PointWrap);
             /* _renderSystem.Draw(spriteBatch);
              _textRenderSystem.Draw(spriteBatch);*/
-          /*  DrawLine(spriteBatch, new Vector2(mouseXY.X, mouseXY.Y), new Vector2(mouseXY.X + 50, mouseXY.Y), Color.Green);
-            DrawLine(spriteBatch, new Vector2(mouseXY.X + 50, mouseXY.Y), new Vector2(mouseXY.X + 50, mouseXY.Y + 30), Color.Green);
-            DrawLine(spriteBatch, new Vector2(mouseXY.X + 50, mouseXY.Y+30), new Vector2(mouseXY.X, mouseXY.Y + 30), Color.Green);
-            DrawLine(spriteBatch, new Vector2(mouseXY.X, mouseXY.Y + 30), new Vector2(mouseXY.X, mouseXY.Y), Color.Green);*/
+            /*  DrawLine(spriteBatch, new Vector2(mouseXY.X, mouseXY.Y), new Vector2(mouseXY.X + 50, mouseXY.Y), Color.Green);
+              DrawLine(spriteBatch, new Vector2(mouseXY.X + 50, mouseXY.Y), new Vector2(mouseXY.X + 50, mouseXY.Y + 30), Color.Green);
+              DrawLine(spriteBatch, new Vector2(mouseXY.X + 50, mouseXY.Y+30), new Vector2(mouseXY.X, mouseXY.Y + 30), Color.Green);
+              DrawLine(spriteBatch, new Vector2(mouseXY.X, mouseXY.Y + 30), new Vector2(mouseXY.X, mouseXY.Y), Color.Green);*/
 
 
 
-            SpriteBatch.End();
+            _game.SpriteBatch.End();
 
             // after drawing the game at native resolution we can render _nativeRenderTarget to the backbuffer!
             // First set the GraphicsDevice target back to the backbuffer

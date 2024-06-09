@@ -6,6 +6,7 @@ namespace MonoGame.Training.Components
     public class TextureComponent : Component
     {
         public Texture2D Texture { get; set; }
+        public string TextureId { get; set; }
         public Rectangle Rectangle { get; set;}
         public float Opacity { get; set; } = 1.0f;
 

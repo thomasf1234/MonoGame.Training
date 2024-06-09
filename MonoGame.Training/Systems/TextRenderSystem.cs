@@ -9,11 +9,11 @@ namespace MonoGame.Training.Systems
 {
     public class TextRenderSystem : System
     {
-        private readonly IAssetRepository _assetRepository;
+        private readonly IResourceRepository _resourceRepository;
 
-        public TextRenderSystem(IComponentRepository componentRepository, IAssetRepository assetRepository) : base(componentRepository)
+        public TextRenderSystem(IComponentRepository componentRepository, IResourceRepository resourceRepository) : base(componentRepository)
         {
-            _assetRepository = assetRepository;
+            _resourceRepository = resourceRepository;
         }
 
         public void Draw(SpriteBatch spriteBatch)
@@ -34,7 +34,7 @@ namespace MonoGame.Training.Systems
                 var transformComponent = _componentRepository.GetComponent<TransformComponent>(entityId);
                 //var meshComponent = _componentRepository.GetComponent<MeshComponent>(entityId);
 
-                var font = _assetRepository.GetFont(textComponent.FontId);
+                var font = _resourceRepository.GetFont(textComponent.FontId);
                 var scale = 1f; //5f; // Figure out how to addess scale for drawString;
                 //spriteBatch.DrawString(font, menuItem, new Vector2(x + 2, y + offsetY + 2), Color.Black * opacity); TODO: Add Shadow float and fade in/out
                 spriteBatch.DrawString(font, textComponent.Text, transformComponent.Position, textComponent.Color * textComponent.Opacity, transformComponent.Rotation, Vector2.Zero, scale, SpriteEffects.None, 0);

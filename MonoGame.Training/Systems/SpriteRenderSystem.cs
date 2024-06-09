@@ -19,6 +19,7 @@ namespace MonoGame.Training.Systems
 
         public void Draw(GameTime gameTime)
         {
+            // TODO : group by textureId
             foreach (var entityId in EntityIds)
             {
                 var transformComponent = _componentRepository.GetComponent<TransformComponent>(entityId);

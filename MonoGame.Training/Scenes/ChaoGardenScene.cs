@@ -7,89 +7,109 @@ using MonoGame.Training.Repositories;
 using MonoGame.Training.StateMachines;
 using MonoGame.Training.Systems;
 using System.Collections.Generic;
-using System;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using MonoGame.Training.Helpers;
-using System.Diagnostics;
-using Microsoft.Xna.Framework.Media;
+using Color = Microsoft.Xna.Framework.Color;
+using Rectangle = Microsoft.Xna.Framework.Rectangle;
+using MonoGame.Training.DependencyInjection;
 
 namespace MonoGame.Training.Scenes
 {
     //https://gamefromscratch.com/monogame-tutorial-audio/
     public class ChaoGardenScene : Scene
     {
-        private IAssetRepository _assetRepository;
+        private IConfigurationRepository _configurationRepository;
+        private IResourceRepository _resourceRepository;
         private IEntityRepository _entityRepository;
         private IComponentRepository _componentRepository;
-        private InputHelper _inputHelper;
-        private GraphicsHelper _graphicsHelper;
+        private IInputRepository _inputRepository;
         private MetricSystem _metricSystem;
         private MotionSystem _motionSystem;
         private AnimationSystem _animationSystem;
         private SpriteRenderSystem _renderSystem;
         private TextRenderSystem _textRenderSystem;
         private IChaoStateMachine _chaoStateMachine;
-        private MusicSystem _musicSystem;
+        private SoundSystem _soundSystem;
         private SoundComponent _tinyChaoGardenSoundComponent;
+        private Matrix _scaleMatrix;
 
         private bool _paused;
 
-        public ChaoGardenScene(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, IAssetRepository assetRepository, IEntityRepository entityRepository, IComponentRepository componentRepository, InputHelper inputHelper, GraphicsHelper graphicsHelper) : base(spriteBatch, graphicsDevice)
+        private Game1 _game;
+
+        public ChaoGardenScene(ServiceContainer serviceContainer) : base()
         {
-            _assetRepository = assetRepository;
-            _entityRepository = entityRepository;
-            _componentRepository = componentRepository;
-            _inputHelper = inputHelper;
-            _graphicsHelper = graphicsHelper;
+            _game = serviceContainer.Get<Game1>();
+            _configurationRepository = serviceContainer.Get<IConfigurationRepository>(); ;
+            _resourceRepository = serviceContainer.Get<IResourceRepository>();
+            _entityRepository = serviceContainer.Get<IEntityRepository>();
+            _componentRepository = serviceContainer.Get<IComponentRepository>();
+            _inputRepository = serviceContainer.Get<IInputRepository>();
             _paused = false;
         }
 
         protected override void OnLoading()
         {
+            var virtualWidth = 176;
+            var virtualHeight = 160;
+            AspectRatio = virtualWidth / (float) virtualHeight;
+
+            var actualWidth = _game.GraphicsDevice.Viewport.Width; // PreferredBackBufferWidth;
+            var actualHeight = _game.GraphicsDevice.Viewport.Height; //.PreferredBackBufferHeight;
+            _scaleMatrix = Matrix.CreateScale(
+                (float)actualHeight / virtualHeight, //(float)actualWidth / virtualWidth,
+                (float)actualHeight / virtualHeight,
+                1f);
+
+
+
+
+
+            #region Load configuration
+            var configuration = _configurationRepository.Load();
+            #endregion
+
+            #region Load Assets
             var backgroundMusicEntity = _entityRepository.Create();
-            var tinyChaoGardenSong = _assetRepository.GetSong("Placeholder_TinyChaoGarden_Theme");
             _tinyChaoGardenSoundComponent = new SoundComponent()
             {
-                Song = tinyChaoGardenSong,
+                SoundId = "TinyChaoGarden_Theme",
                 IsLooping = true,
-                IsPaused = false
+                IsPaused = false,
+                Background = true
             };
             _componentRepository.SetComponent<SoundComponent>(backgroundMusicEntity.Id, _tinyChaoGardenSoundComponent);
-            _musicSystem = new MusicSystem(_componentRepository);
-            _musicSystem.Register(backgroundMusicEntity.Id);
+            _soundSystem = new SoundSystem(configuration, _componentRepository, _resourceRepository);
+            _soundSystem.Register(backgroundMusicEntity.Id);
 
 
-            var chaoGardenTexture = _assetRepository.GetTexture("ChaoGarden");
-            var chaoSpritesTexture = _assetRepository.GetTexture("ChaoSprites");
+            var chaoGardenTexture = _resourceRepository.GetTexture("ChaoGarden");
+            var chaoSpritesTexture = _resourceRepository.GetTexture("ChaoSprites");
+            #endregion
 
-            // Initialise Entities
-            var metricsEntity = _entityRepository.Create();
+            #region Initialise Systems
+            _metricSystem = new MetricSystem(_componentRepository);
+            _motionSystem = new MotionSystem(_componentRepository);
+            _animationSystem = new AnimationSystem(_componentRepository);
+            _renderSystem = new SpriteRenderSystem(_componentRepository, _game.SpriteBatch);
+            _textRenderSystem = new TextRenderSystem(_componentRepository, _resourceRepository);
+            #endregion
 
-            var metricsTextComponent = new TextComponent()
+            #region Background Entity
+            var backgroundEntity = _entityRepository.Create();
+            var backgroundEntityTransformComponent = new TransformComponent()
             {
-                FontId = "Arial",
-                Color = Color.White,
-                Opacity = 1f,
-                Text = ""
+                Position = new Vector2(0, 0)
             };
+            var backgroundEntityGraphicComponent = new TextureComponent(chaoGardenTexture);
 
-            var metricsMeshComponent = new MeshComponent()
-            {
-                Vertices = new List<Vector2>()
-                    {
-                        new Vector2(0, 0),
-                        new Vector2(100, 0),
-                        new Vector2(100, 35),
-                        new Vector2(0, 35)
-                    }
-            };
+            _componentRepository.SetComponent(backgroundEntity.Id, backgroundEntityTransformComponent);
+            _componentRepository.SetComponent(backgroundEntity.Id, backgroundEntityGraphicComponent);
 
-            var metricsTransformComponent = new TransformComponent()
-            {
-                Position = new Vector2(10, 10)
-            };
+            _renderSystem.Register(backgroundEntity.Id);
+            #endregion
 
+            #region Chao Entity
             var chaoAnimations = new Dictionary<string, Animation>()
                     {
                         { "IdleDown", new Animation(new Vector2(0, 0), 21, 24, 1, 0.2f, true) },
@@ -130,45 +150,50 @@ namespace MonoGame.Training.Scenes
             chaoStateMachine.Assign(chaoEntity);
             _chaoStateMachine = chaoStateMachine;
 
-            var backgroundEntity = new BackgroundEntity(_entityRepository.Create().Id)
-            {
-                TransformComponent = new TransformComponent()
-                {
-                    Position = new Vector2(0, 0)
-                },
-                GraphicComponent = new TextureComponent(chaoGardenTexture)
-            };
-
-            // Persist data
             _componentRepository.SetComponent(chaoEntity.Id, chaoEntity.TransformComponent);
             _componentRepository.SetComponent(chaoEntity.Id, chaoEntity.MotionComponent);
             _componentRepository.SetComponent(chaoEntity.Id, chaoEntity.GraphicComponent);
             _componentRepository.SetComponent(chaoEntity.Id, chaoEntity.AnimationComponent);
 
-            _componentRepository.SetComponent(backgroundEntity.Id, backgroundEntity.TransformComponent);
-            _componentRepository.SetComponent(backgroundEntity.Id, backgroundEntity.GraphicComponent);
+            _motionSystem.Register(chaoEntity.Id);
+            _animationSystem.Register(chaoEntity.Id);
+            _renderSystem.Register(chaoEntity.Id);
+            #endregion
+
+            #region Metrics Entity
+            var metricsEntity = _entityRepository.Create();
+
+            var metricsTextComponent = new TextComponent()
+            {
+                FontId = "Arial",
+                Color = Color.White,
+                Opacity = 1f,
+                Text = ""
+            };
+
+            var metricsMeshComponent = new MeshComponent()
+            {
+                Vertices = new List<Vector2>()
+                    {
+                        new Vector2(0, 0),
+                        new Vector2(100, 0),
+                        new Vector2(100, 35),
+                        new Vector2(0, 35)
+                    }
+            };
+
+            var metricsTransformComponent = new TransformComponent()
+            {
+                Position = new Vector2(10, 10)
+            };
 
             _componentRepository.SetComponent(metricsEntity.Id, metricsTextComponent);
             _componentRepository.SetComponent(metricsEntity.Id, metricsMeshComponent);
             _componentRepository.SetComponent(metricsEntity.Id, metricsTransformComponent);
 
-            // Intialise systems
-            _metricSystem = new MetricSystem(_componentRepository);
-            _metricSystem.Register(new List<int>() { metricsEntity.Id });
-
-            _motionSystem = new MotionSystem(_componentRepository);
-            _motionSystem.Register(new List<int>() { chaoEntity.Id });
-
-            _animationSystem = new AnimationSystem(_componentRepository);
-            _animationSystem.Register(new List<int>() { chaoEntity.Id });
-
-            _renderSystem = new SpriteRenderSystem(_componentRepository, SpriteBatch);
-            _renderSystem.Register(new List<int>() { backgroundEntity.Id, chaoEntity.Id });
-
-            _textRenderSystem = new TextRenderSystem(_componentRepository, _assetRepository);
-            _textRenderSystem.Register(new List<int>() { metricsEntity.Id });
-
-
+            _metricSystem.Register(metricsEntity.Id);
+            _textRenderSystem.Register(metricsEntity.Id);
+            #endregion
         }
 
         protected override void OnActive()
@@ -181,13 +206,13 @@ namespace MonoGame.Training.Scenes
             _metricSystem.Update(gameTime);
 
             // Pause
-            if (_inputHelper.IsKeyPressed(Keys.P))
+            if (_inputRepository.IsKeyPressed(Keys.P))
             {
                 _paused = !_paused;
-                _tinyChaoGardenSoundComponent.IsPaused = _paused;
+               // _tinyChaoGardenSoundComponent.IsPaused = _paused;
             }
 
-            _musicSystem.Update(gameTime);
+            _soundSystem.Update(gameTime);
 
             if (_paused)
             {
@@ -201,13 +226,13 @@ namespace MonoGame.Training.Scenes
 
             var keysPressed = 0b0000;
 
-            if (_inputHelper.AnyKeyDown(new Keys[] { Keys.W, Keys.Up }))
+            if (_inputRepository.AnyKeyDown(new Keys[] { Keys.W, Keys.Up }))
                 keysPressed = keysPressed | 0b0001;
-            if (_inputHelper.AnyKeyDown(new Keys[] { Keys.S, Keys.Down }))
+            if (_inputRepository.AnyKeyDown(new Keys[] { Keys.S, Keys.Down }))
                 keysPressed = keysPressed | 0b0010;
-            if (_inputHelper.AnyKeyDown(new Keys[] { Keys.A, Keys.Left }))
+            if (_inputRepository.AnyKeyDown(new Keys[] { Keys.A, Keys.Left }))
                 keysPressed = keysPressed | 0b0100;
-            if (_inputHelper.AnyKeyDown(new Keys[] { Keys.D, Keys.Right }))
+            if (_inputRepository.AnyKeyDown(new Keys[] { Keys.D, Keys.Right }))
                 keysPressed = keysPressed | 0b1000;
 
             switch (keysPressed)
@@ -236,28 +261,26 @@ namespace MonoGame.Training.Scenes
 
         public override void Draw(GameTime gameTime)
         {
-            var graphicsDevice = _graphicsHelper.GetGraphicsDeviceManager().GraphicsDevice;
-
             // Draw call
-            graphicsDevice.Clear(Color.Black);
+            _game.GraphicsDevice.Clear(Color.Black);
             if (_paused)
             {
-                var grayScaleEffect = _assetRepository.GetEffect("GrayScale");
+                var grayScaleEffect = _resourceRepository.GetEffect("GrayScale");
                 //grayScaleEffect.CurrentTechnique.Passes[0].Apply();
 
                 // TODO : Pass spriteBatch to each scene
                 // Shader must be applied at sprite batch begin, affecting all sprites drawn during spritebatch.End(). SortMode.Deferred waits until spriteBatch.End() to draw
-                SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, samplerState: SamplerState.PointWrap, effect: grayScaleEffect);
+                _game.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, samplerState: SamplerState.PointWrap, effect: grayScaleEffect, transformMatrix: _scaleMatrix);
 
             }
             else
             {
-                SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, samplerState: SamplerState.PointWrap);
+                _game.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, samplerState: SamplerState.PointWrap, transformMatrix: _scaleMatrix);
             }
 
             _renderSystem.Draw(gameTime);
 
-            var font = _assetRepository.GetFont("Arial");
+            var font = _resourceRepository.GetFont("Arial");
 
             if (_paused)
             {
@@ -268,13 +291,13 @@ namespace MonoGame.Training.Scenes
                 // Calculate the center of the screen
                 var center = new Vector2(200, 200); //_graphics.GraphicsDevice.Viewport.Bounds.Center.ToVector2();
                 var v = new Vector2(font.MeasureString(pausedText).X / 2, 0);
-                SpriteBatch.DrawString(font, pausedText, center - v + new Vector2(2, 2), Color.Black);
-                SpriteBatch.DrawString(font, pausedText, center - v, Color.White);
+                _game.SpriteBatch.DrawString(font, pausedText, center - v + new Vector2(2, 2), Color.Black);
+                _game.SpriteBatch.DrawString(font, pausedText, center - v, Color.White);
             }
 
-            _textRenderSystem.Draw(SpriteBatch);
+            _textRenderSystem.Draw(_game.SpriteBatch);
 
-            SpriteBatch.End();
+            _game.SpriteBatch.End();
         }
     }
 }

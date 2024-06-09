@@ -2,25 +2,25 @@
 using Microsoft.Xna.Framework;
 using MonoGame.Training.Repositories;
 using MonoGame.Training.Components;
-using MonoGame.Training.Helpers;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace MonoGame.Training.Systems
 {
     public class InputSystem : System
     {
-        private readonly InputHelper _inputHelper;
-        private readonly GraphicsHelper _graphicsHelper;
+        private readonly IInputRepository _inputRepository;
+        private readonly Viewport _viewport;
 
-        public InputSystem(IComponentRepository componentRepository, InputHelper inputHelper, GraphicsHelper graphicsHelper) : base(componentRepository)
+        public InputSystem(IComponentRepository componentRepository, IInputRepository inputRepository, Viewport viewport) : base(componentRepository)
         {
-            _inputHelper = inputHelper;
-            _graphicsHelper = graphicsHelper;
+            _inputRepository = inputRepository;
+            _viewport = viewport;
         }
 
         public void Update(GameTime gameTime)
         {
-            var mousePosition = _inputHelper.GetMousePosition();
-            var windowBounds = _graphicsHelper.GetWindowBounds();
+            var mousePosition = _inputRepository.GetMousePosition();
+            var windowBounds = _viewport.Bounds;
 
             var gameX = mousePosition.X - windowBounds.Left;
             var gameY = mousePosition.Y - windowBounds.Top;

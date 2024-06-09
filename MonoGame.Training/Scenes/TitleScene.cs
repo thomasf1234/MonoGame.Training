@@ -5,33 +5,35 @@ using MonoGame.Training.Repositories;
 using MonoGame.Training.Systems;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework.Graphics;
-using MonoGame.Training.Helpers;
+using MonoGame.Training.DependencyInjection;
 
 // https://badecho.com/index.php/2023/08/02/alpha-spritebatch/
 namespace MonoGame.Training.Scenes
 {
     public class TitleScene : Scene
     {
-        private IAssetRepository _assetRepository;
-        private InputHelper _inputHelper;
+        private IResourceRepository _resourceRepository;
+        private IInputRepository _inputRepository;
         private IEntityRepository _entityRepository;
         private IComponentRepository _componentRepository;
         private MenuSystem _menuSystem;
         private TextRenderSystem _textRenderSystem;
+        private Game1 _game;
 
-        public TitleScene(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, IAssetRepository assetRepository, IEntityRepository entityRepository, IComponentRepository componentRepository, InputHelper inputHelper) : base(spriteBatch, graphicsDevice)
+        public TitleScene(ServiceContainer serviceContainer) : base()
         {
-            _assetRepository = assetRepository;
-            _entityRepository = entityRepository;
-            _componentRepository = componentRepository;
-            _inputHelper = inputHelper;
+            _game = serviceContainer.Get<Game1>();
+            _resourceRepository = serviceContainer.Get<IResourceRepository>();
+            _entityRepository = serviceContainer.Get<IEntityRepository>();
+            _componentRepository = serviceContainer.Get<IComponentRepository>();
+            _inputRepository = serviceContainer.Get<IInputRepository>();
         }
 
         protected override void OnLoading()
         {
             #region Initialise Systems
-            _textRenderSystem = new TextRenderSystem(_componentRepository, _assetRepository);
-            _menuSystem = new MenuSystem(_componentRepository, _inputHelper);
+            _textRenderSystem = new TextRenderSystem(_componentRepository, _resourceRepository);
+            _menuSystem = new MenuSystem(_componentRepository, _inputRepository);
             #endregion
 
             #region Main Menu Entities
@@ -199,11 +201,11 @@ namespace MonoGame.Training.Scenes
 
         public override void Draw(GameTime gameTime)
         {
-            SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, samplerState: SamplerState.PointWrap);
+            _game.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, samplerState: SamplerState.PointWrap);
             
-            _textRenderSystem.Draw(SpriteBatch);
+            _textRenderSystem.Draw(_game.SpriteBatch);
 
-            SpriteBatch.End();
+            _game.SpriteBatch.End();
         }
 
         private Entity CreateMenuItemEntity(string text, int index)

@@ -1,7 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using MonoGame.Training.Repositories;
 using Microsoft.Xna.Framework.Graphics;
-using MonoGame.Training.Helpers;
 using MonoGame.Training.Components;
 using MonoGame.Training.Entities;
 using System;
@@ -9,15 +8,15 @@ using MonoGame.Training.Systems;
 using System.Collections.Generic;
 using MonoGame.Training.Models;
 using MonoGame.Training.Models.Geometry;
+using MonoGame.Training.DependencyInjection;
 
 // https://badecho.com/index.php/2023/08/02/alpha-spritebatch/
 namespace MonoGame.Training.Scenes
 {
     public class PongScene : Scene
     {
-        private RenderTarget2D _nativeRenderTarget;
-        private IAssetRepository _assetRepository;
-        private InputHelper _inputHelper;
+        private IResourceRepository _resourceRepository;
+        private IInputRepository _inputRepository;
         private IEntityRepository _entityRepository;
         private IComponentRepository _componentRepository;
 
@@ -28,46 +27,53 @@ namespace MonoGame.Training.Scenes
         private MetricSystem _metricSystem;
         private TextRenderSystem _textRenderSystem;
 
-        private GraphicsHelper _graphicsHelper;
+        private Matrix _scaleMatrix;
 
-        private Rectangle _actualScreenRectangle;
-
-        private float _scale;
         private float scoreDigitOffsetX = 3f;
         private int p1Score;
         private int p2Score;
+        private float _scale;
 
-        public PongScene(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, IAssetRepository assetRepository, IEntityRepository entityRepository, IComponentRepository componentRepository, InputHelper inputHelper, GraphicsHelper graphicsHelper) : base(spriteBatch, graphicsDevice)
+        private Game1 _game;
+
+        public PongScene(ServiceContainer serviceContainer) : base()
         {
-            _assetRepository = assetRepository;
-            _entityRepository = entityRepository;
-            _componentRepository = componentRepository;
-            _inputHelper = inputHelper;
-            _graphicsHelper = graphicsHelper;
-            _scale = 2f;
+            _game = serviceContainer.Get<Game1>();
+            _resourceRepository = serviceContainer.Get<IResourceRepository>();
+            _entityRepository = serviceContainer.Get<IEntityRepository>();
+            _componentRepository = serviceContainer.Get<IComponentRepository>();
+            _inputRepository = serviceContainer.Get<IInputRepository>();
+            _scale = 1f; // 2f;
         }
 
         protected override void OnLoading()
         {
             // Initialization
-            _actualScreenRectangle = new Rectangle(0, 0, (int)(370 * _scale), (int)(290 * _scale));
-            var nativeScreenRectangle = new Rectangle(0, 0, 370, 290);
-            _nativeRenderTarget = new RenderTarget2D(_graphicsHelper.GetGraphicsDeviceManager().GraphicsDevice, nativeScreenRectangle.Width, nativeScreenRectangle.Height);
+            var virtualWidth = 370;
+            var virtualHeight = 290;
+            AspectRatio = virtualWidth / (float)virtualHeight;
+
+            var actualWidth = _game.GraphicsDevice.Viewport.Width;
+            var actualHeight = _game.GraphicsDevice.Viewport.Height;
+            _scaleMatrix = Matrix.CreateScale(
+                (float)actualHeight / virtualHeight, //(float)actualWidth / virtualWidth,
+                (float)actualHeight / virtualHeight,
+                1f);
 
             p1Score = 0;
             p2Score = 0;
-            var ballTexture = _assetRepository.GetTexture("Pong/Ball");
-            var netTexture = _assetRepository.GetTexture("Pong/Net");
-            var score0Texture = _assetRepository.GetTexture("Pong/Score_0");
-            var paddleTexture = _assetRepository.GetTexture("Pong/Paddle");
+            var ballTexture = _resourceRepository.GetTexture("Pong/Ball");
+            var netTexture = _resourceRepository.GetTexture("Pong/Net");
+            var score0Texture = _resourceRepository.GetTexture("Pong/Score_0");
+            var paddleTexture = _resourceRepository.GetTexture("Pong/Paddle");
 
             #region Initialise Systems
-            _renderSystem = new SpriteRenderSystem(_componentRepository, SpriteBatch);
-            _inputSystem = new InputSystem(_componentRepository, _inputHelper, _graphicsHelper);
+            _renderSystem = new SpriteRenderSystem(_componentRepository, _game.SpriteBatch);
+            _inputSystem = new InputSystem(_componentRepository, _inputRepository, _game.GraphicsDevice.Viewport);
             _physicsSystem = new PhysicsSystem(_componentRepository);
             _collisionSystem = new CollisionSystem(_componentRepository);
             _metricSystem = new MetricSystem(_componentRepository);
-            _textRenderSystem = new TextRenderSystem(_componentRepository, _assetRepository);   
+            _textRenderSystem = new TextRenderSystem(_componentRepository, _resourceRepository);   
             #endregion
 
             #region Initialise Metrics Summary
@@ -113,7 +119,7 @@ namespace MonoGame.Training.Scenes
             var p1ScoreEntity = _entityRepository.Create();
             var p1ScoreTransformComponent = new TransformComponent()
             {
-                Position = new Vector2(114, 34) - new Vector2(_assetRepository.GetTexture("Pong/Score_0").Width, 0)
+                Position = new Vector2(114, 34) - new Vector2(_resourceRepository.GetTexture("Pong/Score_0").Width, 0)
             };
             var p1ScoreTextureComponent = new TextureComponent(score0Texture);
 
@@ -127,7 +133,7 @@ namespace MonoGame.Training.Scenes
             var p2ScoreEntity = _entityRepository.Create();
             var p2ScoreTransformComponent = new TransformComponent()
             {
-                Position = new Vector2(296, 34) - new Vector2(_assetRepository.GetTexture("Pong/Score_0").Width, 0)
+                Position = new Vector2(296, 34) - new Vector2(_resourceRepository.GetTexture("Pong/Score_0").Width, 0)
             };
             var p2ScoreTextureComponent = new TextureComponent(score0Texture);
 
@@ -170,7 +176,8 @@ namespace MonoGame.Training.Scenes
             {
                 OnMouseMove = (x, y) =>
                 {
-                    var maxY = (_graphicsHelper.GetWindowBounds().Height / _scale) - (p1PaddleTextureComponent.Rectangle.Height);
+                    // TODO review
+                    var maxY = (_game.GraphicsDevice.Viewport.Bounds.Height / _scale) - (p1PaddleTextureComponent.Rectangle.Height);
 
                     x = x / _scale;
                     y = y / _scale;
@@ -358,7 +365,7 @@ namespace MonoGame.Training.Scenes
                 {
                     p2Score += 1;
 
-                    var newScoreTexture = _assetRepository.GetTexture($"Pong/Score_{p2Score}");
+                    var newScoreTexture = _resourceRepository.GetTexture($"Pong/Score_{p2Score}");
                     var p2ScoreTransformComponent = new TransformComponent()
                     {
                         Position = new Vector2(296, 34) - new Vector2(newScoreTexture.Width, 0)
@@ -420,7 +427,13 @@ namespace MonoGame.Training.Scenes
                 {
                     p1Score += 1;
 
-                    var newScoreTexture = _assetRepository.GetTexture($"Pong/Score_{p1Score}");
+                    if (p1Score == 10)
+                    {
+                        Exit(1);
+                        return; // TODO : Flesh out further
+                    }
+
+                    var newScoreTexture = _resourceRepository.GetTexture($"Pong/Score_{p1Score}");
                     var p1ScoreTransformComponent = new TransformComponent()
                     {
                         Position = new Vector2(114, 34) - new Vector2(newScoreTexture.Width, 0)
@@ -519,7 +532,7 @@ namespace MonoGame.Training.Scenes
         public override void Draw(GameTime gameTime)
         {
             // Draw call
-            GraphicsDevice.SetRenderTarget(_nativeRenderTarget);
+            /*GraphicsDevice.SetRenderTarget(_nativeRenderTarget);
             GraphicsDevice.Clear(Color.Black);
             // now render your game like you normally would, but if you change the render target somewhere,
             // make sure you set it back to this one and not the backbuffer
@@ -534,7 +547,18 @@ namespace MonoGame.Training.Scenes
             // RenderTarget2D inherits from Texture2D so we can render it just like a texture
             SpriteBatch.Begin(samplerState: SamplerState.PointClamp);
             SpriteBatch.Draw(_nativeRenderTarget, _actualScreenRectangle, Color.White);
-            SpriteBatch.End();    
+            SpriteBatch.End();    */
+
+
+
+
+            _game.GraphicsDevice.Clear(Color.Black);
+            // now render your game like you normally would, but if you change the render target somewhere,
+            // make sure you set it back to this one and not the backbuffer
+            _game.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, samplerState: SamplerState.PointWrap, transformMatrix: _scaleMatrix);
+            _renderSystem.Draw(gameTime);
+            _textRenderSystem.Draw(_game.SpriteBatch);
+            _game.SpriteBatch.End();
         }
 
         private Vector2 RandomBallVelocity()

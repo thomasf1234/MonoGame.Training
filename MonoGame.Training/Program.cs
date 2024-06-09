@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MonoGame.Training.Repositories;
+using System;
 
 namespace MonoGame.Training
 {
@@ -9,9 +10,17 @@ namespace MonoGame.Training
         {
             // TODO : Load config
             // TODO : Add Logger
+
+            while (Run()) { }
+        }
+
+        private static bool Run()
+        {
             using (var game = new Game1())
             {
                 game.Run();
+
+                return game.RequireRestart;
             }
         }
     }

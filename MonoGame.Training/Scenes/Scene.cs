@@ -10,18 +10,13 @@ namespace MonoGame.Training.Scenes
     {
         public string Name { get; set; }
         // TODO : Move to own class
-        public Vector2 CameraSize { get; set; }
+        public float AspectRatio { get; set; } = 1f;
         public int ExitCode { get; private set; }
         private StateMachine<SceneState, SceneTrigger> _stateMachine;
         private StateMachine<SceneState, SceneTrigger>.TriggerWithParameters<int> _exitTrigger;
-        protected SpriteBatch SpriteBatch;
-        protected GraphicsDevice GraphicsDevice;
 
-        public Scene(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
+        public Scene()
         {
-            SpriteBatch = spriteBatch;
-            GraphicsDevice = graphicsDevice;
-
             _stateMachine = new StateMachine<SceneState, SceneTrigger>(SceneState.Unloaded);
 
             _exitTrigger = _stateMachine.SetTriggerParameters<int>(SceneTrigger.Exit);
